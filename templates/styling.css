@@ -1,0 +1,33 @@
+.MainTitle{
+    margin-left:auto;
+    margin-right:auto;
+    width: 100%;
+    position: relative;
+    color:white;
+    text-align: center;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', 'sans-serif';
+    font:400;
+    background-color:rgba(50, 50, 50, 0.5);
+    padding: 1px;
+}
+
+.videoMainBlock{
+    margin-left:auto;
+    margin-right:auto;
+    width:100%;
+    height: 640px;
+    position: absolute;
+    /* display: flex; */
+    background-color:rgba(98, 147, 89, 1);
+}
+
+.VideoItem{
+    margin-left:auto;
+    margin-right:auto;
+    position: absolute;
+    /* display:flex; */
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;    
+}
