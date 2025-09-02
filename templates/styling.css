@@ -1,30 +1,32 @@
 .MainTitle{
     margin-left:auto;
     margin-right:auto;
+    margin-top: 0%;
     width: 100%;
     position: relative;
     color:white;
     text-align: center;
     font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', 'sans-serif';
     font:400;
-    background-color:rgba(50, 50, 50, 0.5);
-    padding: 1px;
+    font-size: 10pt;
+    background-color:rgba(184, 184, 184, 0.80);
+    padding: 0.25px;
 }
 
 .videoMainBlock{
     margin-left:auto;
     margin-right:auto;
     width:100%;
-    height: 640px;
+    /* height: 100%;  */
+    aspect-ratio: 16/9;
     position: absolute;
-    /* display: flex; */
-    background-color:rgba(98, 147, 89, 1);
+    display: flex;
 }
 
 .VideoItem{
     margin-left:auto;
     margin-right:auto;
-    position: absolute;
+    position:absolute;
     /* display:flex; */
     justify-content: center;
     align-items: center;
