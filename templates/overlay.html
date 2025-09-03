@@ -13,7 +13,7 @@
         <div class="videoMainBlock">
                 <iframe
                     class="VideoItem" 
-                    src="https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/ime5SjsYrM9_5"
+                    src="{{config['URL']}}"
                     allow="autoplay"
                     allowfullscreen
                     webkitallowfullscreen
@@ -23,8 +23,8 @@
             <!-- this is where the upper title block is going -->
             <!-- TODO: update names to be dynamic -->
             <div class="MainTitle">
-                <h1> {{ Location }} </h1> 
-                <h3> 09/01/2025 - 9:10 pm </h3>
+                <h1> {{ config['webcamLocationDesc'] }} </h1> 
+                <h3><span id = "Webcam_local_time_"></span></h3>
             </div>
         </div>
     </main>
@@ -32,23 +32,35 @@
 
 <script>
     function UpdateWebcamLocalTime(){
-        fetch('/<location>')
+        fetch("/live/")
         .then(response => response.json())
         .then(data => {
+            let t = data.Webcam_local_time;
+            
+            let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
+            WebcamLocalTimeElement.innerText = {t};
+            document.getElementById('Webcam_local_time_').innerText = t;
+
             console.log(data);
         })
     }
-    setInterval(UpdateWebcamLocalTime,1000)
 
-    function Change2NewWebcam(){
-        fetch('/<location>')
+    function ShuffleVideoSource(){
+        fetch("/shuffle/")
         .then(response => response.json())
         .then(data => {
-            console.log(data)
+            let t = data.Webcam_local_time;
+            
+            let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
+            WebcamLocalTimeElement.innerText = {t};
+            document.getElementById('Webcam_local_time_').innerText = t;
+
+            console.log(data);
         })
     }
-    setInterval(UpdateWebcamLocalTime,60000)
 
+    setInterval(UpdateWebcamLocalTime,1000)
+    setInterval(ShuffleVideoSource,15000)
+    
 </script>
-
 </html>
