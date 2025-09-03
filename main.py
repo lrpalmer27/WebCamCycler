@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from datetime import timedelta, datetime, timezone
 import pytz
 from pytz import timezone as ptztz
@@ -8,42 +8,55 @@ import math
 
 app = Flask(__name__)
 
-@app.route("/")
-def hello_world():
-    return "<p>Hello, World!</p>"
-
-@app.route("/user/<username>")
-def profile(username):
-    return f'Hello, {username}'
+# app.config['expiration_time'] = 
 
 @app.route("/<location>")
 def renderHTML(location):
-    return render_template('overlay.html',Location={location})
+    readData() #initialize by reading the csv to fill in the df var
+    Shuffle_webcam_locations() #initialize with a starting shuffle
+    return render_template('overlay.html',Location=app.config['webcamLocationDesc'])
 
+def get_webcam_timezone_time():
+    WEBCAM_TZ = app.config['df']['PYTZ TIMEZONE'].iloc[app.config['RandomNo']]
+    WebCamTimeZone_time = datetime.now(tz=ptztz(WEBCAM_TZ))
+    return jsonify({'Webcam_local_time': WebCamTimeZone_time})
 
+def Shuffle_webcam_locations():
+    # get new random number
+    app.config['RandomNo']= random.randint(0,app.config['df'].shape[0]-1)
+    # update URL
+    app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
+    # Update locaton description
+    app.config['webcamLocationDesc']=app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']]
+    # call to update webcam local timezone variable
+    get_webcam_timezone_time()
+    return 
 
-if __name__ == "__main__":  
-    debugging = 0
+def readData(): 
+    app.config['df']= pd.read_csv('./WebcamURLs.csv')
+
+if __name__ == "__main__":   
+    debugging = 1
+    app.run(debug=debugging, port=5000)
     # print(pytz.all_timezones)
 
     LocalTZ = ptztz('America/Los_Angeles')
     LOCALTIME=datetime.now(tz=LocalTZ)
     
-    # read csv
-    df = pd.read_csv('./WebcamURLs.csv')
+    # # read csv
+    # app.config['df']= pd.read_csv('./WebcamURLs.csv')
         
-    # Hide this function in a local time of day checker function ---------------------------------- 
-    RandomNo=random.randint(0,df.shape[0]-1) #random integer between 0 and number of rows of dataframe   
-    LOCATION = df['DESCRIPTION'].iloc[RandomNo]
-    URL= df['URL'].iloc[RandomNo]
-    WEBCAM_TZ = df['PYTZ TIMEZONE'].iloc[RandomNo]
-    WebCamTimeZone = datetime.now(tz=ptztz(WEBCAM_TZ))
+    # # make random number between 0-max size of df.
+    # Shuffle_webcam_locations()
+    # get_webcam_locaton()
     
-    if debugging: 
-        print(LOCALTIME)
-        print(df)
-        print(df.iloc[[RandomNo]])
-        print('Webcam timezone: ', WebCamTimeZone)
+    # print('testing')
+    # print(app.config['webcamLocationDesc'])
+    
+    # #get URL of the location we are going to pull data for
+    
+
+    
     
     
     

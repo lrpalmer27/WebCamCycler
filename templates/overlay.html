@@ -23,11 +23,32 @@
             <!-- this is where the upper title block is going -->
             <!-- TODO: update names to be dynamic -->
             <div class="MainTitle">
-                <h1> {{Location}} </h1> 
+                <h1> {{ Location }} </h1> 
                 <h3> 09/01/2025 - 9:10 pm </h3>
             </div>
-
         </div>
     </main>
 </body>
+
+<script>
+    function UpdateWebcamLocalTime(){
+        fetch('/<location>')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+        })
+    }
+    setInterval(UpdateWebcamLocalTime,1000)
+
+    function Change2NewWebcam(){
+        fetch('/<location>')
+        .then(response => response.json())
+        .then(data => {
+            console.log(data)
+        })
+    }
+    setInterval(UpdateWebcamLocalTime,60000)
+
+</script>
+
 </html>
