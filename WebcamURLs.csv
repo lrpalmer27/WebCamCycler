@@ -1,12 +1,12 @@
-﻿DESCRIPTION,URL,GMT OFFSET
-St. John's from Signal Hill,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/ime5SjsYrM9_5 ,-3.5
-St. John's from Admirals Greens,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtRv7RscdMl_5,-3.5
-Downtown St. John's,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtiWjTscdMV_5,-3.5
-Quidi Vidi Lake,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GnpYXwscJf1_5,-3.5
-George Street,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GNPhLAscIFd_5,-3.5
-Quidi Vidi Village (behind QV brewery),https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/eJLPobsASYm_5,-3.5
-Confederation Bridge,https://www.youtube.com/watch?v=ZFZw_UrBYuY,-3
-Green Shore Summerside,https://www.youtube.com/watch?v=6ezJq4jqAGk,-3
-Edgewood Tahoe,https://edgewoodtahoe.com/webcam/,-8
-Zephyr Cove,https://www.youtube.com/watch?v=Lk0Z5ExUWL0,-8
-Heavenly,https://www.skiheavenly.com/the-mountain/mountain-conditions/mountain-cams.aspx,-8
+﻿DESCRIPTION,URL,PYTZ TIMEZONE
+St. John's from Signal Hill,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/ime5SjsYrM9_5 ,Canada/Newfoundland
+St. John's from Admirals Greens,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtRv7RscdMl_5,Canada/Newfoundland
+Downtown St. John's,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtiWjTscdMV_5,Canada/Newfoundland
+Quidi Vidi Lake,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GnpYXwscJf1_5,Canada/Newfoundland
+George Street,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GNPhLAscIFd_5,Canada/Newfoundland
+Quidi Vidi Village (behind QV brewery),https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/eJLPobsASYm_5,Canada/Newfoundland
+Confederation Bridge,https://www.youtube.com/watch?v=ZFZw_UrBYuY,Canada/Atlantic
+Green Shore Summerside,https://www.youtube.com/watch?v=6ezJq4jqAGk,Canada/Atlantic
+Edgewood Tahoe,https://edgewoodtahoe.com/webcam/,America/Los_Angeles
+Zephyr Cove,https://www.youtube.com/watch?v=Lk0Z5ExUWL0,America/Los_Angeles
+Heavenly,https://www.skiheavenly.com/the-mountain/mountain-conditions/mountain-cams.aspx,America/Los_Angeles
