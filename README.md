@@ -5,8 +5,6 @@ The idea is to have this on a small picture frame style monitor in my house, lik
 
 
 # TODO: 
-    - Add backend to html overlay template to transfer video steaming location every so many seconds
-        - Update local date, time, video location
     - Convert the current .csv to .db and extract video locations, time offsets, URLs with SQL query.
     - Integrate RPI button to switch to next video
     - Buy RPI screen (touchscreen?)
