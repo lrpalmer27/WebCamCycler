@@ -22,6 +22,7 @@ app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
 
 @app.route("/")
 def renderHTML():
+    print('rendering HTML')
     return render_template('overlay.html')
 
 def get_webcam_timezone_time():
@@ -33,20 +34,25 @@ def get_webcam_timezone_time():
     
 @app.route("/live/")
 def UpdateTimeLoop():
-    # update URL
-    app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
-    print(app.config['URL'])
-    # Update locaton description
-    app.config['webcamLocationDesc']=app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']]
     # call to update webcam local timezone variable
     t=get_webcam_timezone_time()
     return jsonify({'Webcam_local_time': t})
 
 @app.route("/shuffle/")
 def Shuffle_webcam_locations():
+    # update URL
+    app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
+    # Update locaton description
+    app.config['webcamLocationDesc']=app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']]
     # get new random number
     app.config['RandomNo']= random.randint(0,app.config['df'].shape[0]-1)
     t=get_webcam_timezone_time()
+    #re-render html with new URL
+    renderHTML()
+    if debugging: 
+        print("Shuffled to new webcam, random No.: ",app.config['RandomNo'])
+        print("Location: ",app.config['webcamLocationDesc'])
+        print("New URL: ", app.config['URL'])
     return jsonify({'Webcam_local_time': t})
     
 if __name__ == "__main__":
