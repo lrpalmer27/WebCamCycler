@@ -11,18 +11,26 @@
     <main>
         <!-- video block here -->
         <div class="videoMainBlock">
-                <iframe
+                <!-- <iframe
                     class="VideoItem" 
                     src="{{config['URL']}}"
+                    allow="autoplay; encrypted-media"
+                    frameborder="0"
+                    allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
+                </iframe> -->
+
+                <iframe
+                    class="VideoItem" 
+                    id="iFrameElement"
+                    src="id"
                     allow="autoplay; encrypted-media"
                     frameborder="0"
                     allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
                 </iframe>
 
             <!-- this is where the upper title block is going -->
-            <!-- TODO: update names to be dynamic -->
             <div class="MainTitle">
-                <h1> {{ config['webcamLocationDesc'] }} </h1> 
+                <h1><span id = "Webcam_location_description"></span></h1>
                 <h3><span id = "Webcam_local_time_"></span></h3>
             </div>
         </div>
@@ -30,12 +38,40 @@
 </body>
 
 <script>
+    document.addEventListener('DOMContentLoaded',function(){
+        fetch("/shuffle/")
+            .then(response => response.json())
+            .then(data => {
+            let t = data.Webcam_local_time;
+            let webcamLocationDesc = data.webcamLocationDesc;
+            let new_URL = data.ShuffledURL;
+            
+            //update time element
+            let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
+            WebcamLocalTimeElement.innerText = {t};
+            document.getElementById('Webcam_local_time_').innerText = t;
+
+            // update location description element
+            let webcamLocationDescElement = document.getElementById("Webcam_location_description");
+            webcamLocationDescElement.innerText = {webcamLocationDesc};
+            document.getElementById('Webcam_location_description').innerText = webcamLocationDesc;
+
+            // update URL
+            let iframeElement = document.getElementById("iFrameElement");
+            iframeElement.src = new_URL;
+
+            console.log(data);
+    });
+});
+
+
     function UpdateWebcamLocalTime(){
         fetch("/live/")
         .then(response => response.json())
         .then(data => {
             let t = data.Webcam_local_time;
             
+            //update time element
             let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
             WebcamLocalTimeElement.innerText = {t};
             document.getElementById('Webcam_local_time_').innerText = t;
@@ -49,15 +85,27 @@
         .then(response => response.json())
         .then(data => {
             let t = data.Webcam_local_time;
-            
+            let webcamLocationDesc = data.webcamLocationDesc;
+            let new_URL = data.ShuffledURL;
+
+            //update time element
             let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
             WebcamLocalTimeElement.innerText = {t};
             document.getElementById('Webcam_local_time_').innerText = t;
 
+            // update location description element
+            let webcamLocationDescElement = document.getElementById("Webcam_location_description");
+            webcamLocationDescElement.innerText = {webcamLocationDesc};
+            document.getElementById('Webcam_location_description').innerText = webcamLocationDesc;
+
+            // update URL
+            let iframeElement = document.getElementById("iFrameElement");
+            iframeElement.src = new_URL;
+
             console.log(data);
         })
     }
-
+    
     setInterval(UpdateWebcamLocalTime,1000)
     setInterval(ShuffleVideoSource,10000)
     
