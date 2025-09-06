@@ -16,21 +16,6 @@ app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['df']= pd.read_csv('./WebcamURLs.csv')
 # make random number
 app.config['RandomNo']= random.randint(0,app.config['df'].shape[0]-1)
-# pull location descr based on random No
-app.config['webcamLocationDesc']=app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']]
-# URL of location from random No.
-app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
-
-# global df, RandomNo, webcamLocationDesc, URL
-# # read df
-# df= pd.read_csv('./WebcamURLs.csv')
-# # make random number
-# RandomNo= random.randint(0,df.shape[0]-1)
-# # pull location descr based on random No
-# webcamLocationDesc=df['DESCRIPTION'].iloc[RandomNo]
-# # URL of location from random No.
-# # URL= df['URL'].iloc[RandomNo]
-# app.config['URL']= df['URL'].iloc[RandomNo]
 
 @app.route("/")
 def renderHTML():
@@ -46,20 +31,20 @@ def get_webcam_timezone_time():
     return WebCamTimeZone_time_desc
 
 def SetDataParameters():
+    # # read df
+    app.config['df']= pd.read_csv('./WebcamURLs.csv')
     # get new random number
     app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
     # update URL
-    app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
-    url_string=str(app.config['URL'])
+    url_string= str(app.config['df']['URL'].iloc[app.config['RandomNo']])
     # Update locaton description
-    app.config['webcamLocationDesc']=app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']]
-    webcamLocationDesc=str(app.config['webcamLocationDesc'])
+    webcamLocationDesc=str(app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']])
     #re-render html with new URL
     # renderHTML()
     if debugging: 
         print("Shuffled to new webcam, random No.: ",app.config['RandomNo'])
-        print("Location: ",app.config['webcamLocationDesc'])
-        print("New URL: ", app.config['URL'])
+        print("Location: ",webcamLocationDesc)
+        print("New URL: ", url_string)
         print("check str: ", webcamLocationDesc)
     
     return jsonify({'Webcam_local_time':get_webcam_timezone_time(),'webcamLocationDesc':webcamLocationDesc,'ShuffledURL':url_string})
@@ -73,9 +58,14 @@ def Shuffle_webcam_locations():
     return SetDataParameters()
   
 if __name__ == "__main__":
-    debugging = 1
+    debugging = 0
+    if debugging: 
+        pytz.all_timezones
+    
     app.run(debug=debugging, port=5000)
-    # print(pytz.all_timezones)
-
+    
+    # TODO: make the PI turn off during working hours (when I am not usually home)
     # LocalTZ = ptztz('America/Los_Angeles')
     # LOCALTIME=datetime.now(tz=LocalTZ)
+    
+    # TODO: make it so this gets displayed full screen on pi.
