@@ -14,10 +14,9 @@
                 <iframe
                     class="VideoItem" 
                     src="{{config['URL']}}"
-                    allow="autoplay"
-                    allowfullscreen
-                    webkitallowfullscreen
-                    mozallowfullscreen>
+                    allow="autoplay; encrypted-media"
+                    frameborder="0"
+                    allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
                 </iframe>
 
             <!-- this is where the upper title block is going -->
@@ -60,7 +59,7 @@
     }
 
     setInterval(UpdateWebcamLocalTime,1000)
-    setInterval(ShuffleVideoSource,15000)
+    setInterval(ShuffleVideoSource,10000)
     
 </script>
 </html>

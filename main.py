@@ -10,6 +10,7 @@ import math
 #              https://www.youtube.com/watch?v=7FwXKxqfuko
 
 app = Flask(__name__)
+app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # read dg
 app.config['df']= pd.read_csv('./WebcamURLs.csv')
@@ -40,20 +41,21 @@ def UpdateTimeLoop():
 
 @app.route("/shuffle/")
 def Shuffle_webcam_locations():
+    # get new random number
+    app.config['RandomNo']= random.randint(0,app.config['df'].shape[0]-1)
     # update URL
     app.config['URL']= app.config['df']['URL'].iloc[app.config['RandomNo']]
     # Update locaton description
     app.config['webcamLocationDesc']=app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']]
-    # get new random number
-    app.config['RandomNo']= random.randint(0,app.config['df'].shape[0]-1)
+    # Update time
     t=get_webcam_timezone_time()
     #re-render html with new URL
-    renderHTML()
+    # renderHTML()
     if debugging: 
         print("Shuffled to new webcam, random No.: ",app.config['RandomNo'])
         print("Location: ",app.config['webcamLocationDesc'])
         print("New URL: ", app.config['URL'])
-    return jsonify({'Webcam_local_time': t})
+    return jsonify({'Webcam_local_time': t}), render_template('overlay.html')
     
 if __name__ == "__main__":
     debugging = 1
