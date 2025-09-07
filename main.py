@@ -4,7 +4,8 @@ import pytz
 from pytz import timezone as ptztz
 import pandas as pd
 import random
-import math
+import webbrowser
+import sys 
 
 # basics from: https://github.com/CoffeeKeyboardYouTube/TimerWebAppFlask/blob/main/templates/home.html
 #              https://www.youtube.com/watch?v=7FwXKxqfuko
@@ -61,6 +62,9 @@ if __name__ == "__main__":
     debugging = 0
     if debugging: 
         pytz.all_timezones
+    
+    if sys.platform =='win32':
+        webbrowser.open('http://localhost:5000')
     
     app.run(debug=debugging, port=5000)
     
