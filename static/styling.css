@@ -6,11 +6,16 @@
     position: absolute;
     color:white;
     text-align: center;
-    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', 'sans-serif';
-    font:400;
-    font-size: 30pt;
     background-color:rgba(184, 184, 184, 0.60);
     padding: 0.25px;
+    font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', 'sans-serif';
+    font:400;
+    /* Font sizes that look ok: 
+    Computer monitor - 10pt
+    TV - 15pt
+     */
+    /* font-size: 15pt;     */
+    font-size: 15%;
 }
 
 .videoMainBlock{

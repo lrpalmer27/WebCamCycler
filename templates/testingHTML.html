@@ -11,24 +11,14 @@
     <main>
         <!-- video block here -->
         <div class="videoMainBlock">
-                <!-- <iframe
-                    class="VideoItem" 
-                    src="https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GNPhLAscIFd_5?autoplay=1&mute=1"
-                    allow="autoplay; encrypted-media"
-                    frameborder="0"
-                    allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
-                </iframe> -->
 
                 <iframe
                     class="VideoItem" 
-                    src="blob:https://c.streamhoster.com/5ac39f4e-87a0-4171-b860-33d693e13045"
+                    src="https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtRv7RscdMl_5"
                     allow="autoplay; encrypted-media"
                     frameborder="0"
                     allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
                 </iframe>
-
-                <video id="playerEl_html5_api" class="VideoItem" tabindex="-1" role="application" preload="auto" playsinline autoplay="True" src="blob:https://c.streamhoster.com/5ac39f4e-87a0-4171-b860-33d693e13045"></video>
-                
 
             <!-- this is where the upper title block is going -->
             <!-- TODO: update names to be dynamic -->
@@ -40,3 +30,28 @@
         </div>
     </main>
 </body>
+
+<script>
+    document.addEventListener('DOMContentLoaded',function(){
+        // def fcn to auto click
+        const rect = iframeElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        var clickEvent = new MouseEvent("click", {
+            view: window,
+            bubbles: true,
+            cancelable: true, 
+            clientX: centerX,
+            clientY: centerY, 
+        });
+
+        // click to play for NTV videos
+        iframeElement.dispatchEvent(clickEvent);
+
+        console.log(data);
+        return
+    })
+
+
+</script>

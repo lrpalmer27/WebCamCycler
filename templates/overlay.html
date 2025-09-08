@@ -15,10 +15,19 @@
                     class="VideoItem" 
                     id="iFrameElement"
                     src="id"
+                    muted allowfullscreen webkitallowfullscreen mozallowfullscreen
+                    allow="autoplay; fullscreen; encrypted-media"
+                    frameborder="0"
+                    >
+                </iframe>
+
+                <!-- <iframe
+                    class="VideoItem" 
+                    src="https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtRv7RscdMl_5"
                     allow="autoplay; encrypted-media"
                     frameborder="0"
                     allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
-                </iframe>
+                </iframe> -->
 
             <!-- this is where the upper title block is going -->
             <div class="MainTitle">
@@ -30,6 +39,30 @@
 </body>
 
 <script>
+    function autoplay_NTV_streams(){
+        // -------------- def fcn to auto click ---------------
+        //get iframe element
+        let iframeElement = document.getElementById("iFrameElement");
+
+        //get center of iframe element
+        const rect = iframeElement.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        var clickEvent = new MouseEvent("click", {
+            view: window,
+            bubbles: true,
+            cancelable: true, 
+            clientX: centerX,
+            clientY: centerY, 
+        });
+
+        // click to play for NTV videos
+        iframeElement.dispatchEvent(clickEvent);
+        console.log("Autoclick fcn");
+        console.log(centerX,centerY);
+    }
+
     document.addEventListener('DOMContentLoaded',function(){
         fetch("/shuffle/")
             .then(response => response.json())
@@ -51,12 +84,16 @@
             // update URL
             let iframeElement = document.getElementById("iFrameElement");
             iframeElement.src = new_URL;
+            
+            // call auto click fcn
+            autoplay_NTV_streams()
 
             console.log(data);
+            });
+
     });
-});
 
-
+    
     function UpdateWebcamLocalTime(){
         fetch("/live/")
         .then(response => response.json())
@@ -93,6 +130,9 @@
             // update URL
             let iframeElement = document.getElementById("iFrameElement");
             iframeElement.src = new_URL;
+
+            // call autoclick fcn
+            autoplay_NTV_streams()
 
             console.log(data);
         })

@@ -23,13 +23,16 @@ def renderHTML():
     print('rendering HTML')
     return render_template('overlay.html')
 
-def get_webcam_timezone_time():
+def get_webcam_timezone_time(o=None):
     WEBCAM_TZ = app.config['df']['PYTZ TIMEZONE'].iloc[app.config['RandomNo']]
     # WEBCAM_TZ = df['PYTZ TIMEZONE'].iloc[RandomNo]
     WebCamTimeZone_time = datetime.now(tz=ptztz(WEBCAM_TZ))
     # print('time',WebCamTimeZone_time)
-    WebCamTimeZone_time_desc = WebCamTimeZone_time.strftime("%m/%d/%Y - %H:%M:%S %p")
-    return WebCamTimeZone_time_desc
+    WebCamTimeZone_time_desc = WebCamTimeZone_time.strftime("%m/%d/%Y - %I:%M:%S %p")
+    if o != None:
+        return [str(WEBCAM_TZ),WebCamTimeZone_time_desc]
+    else:
+        return WebCamTimeZone_time_desc
 
 def SetDataParameters():
     # # read df
@@ -47,6 +50,8 @@ def SetDataParameters():
         print("Location: ",webcamLocationDesc)
         print("New URL: ", url_string)
         print("check str: ", webcamLocationDesc)
+    
+    TimeDataList=get_webcam_timezone_time(1)
     
     return jsonify({'Webcam_local_time':get_webcam_timezone_time(),'webcamLocationDesc':webcamLocationDesc,'ShuffledURL':url_string})
     
