@@ -31,7 +31,6 @@
 </body>
 
 <script>
-    /*
     function autoplay_NTV_streams(){
         // -------------- def fcn to auto click ---------------
         //get iframe element
@@ -58,7 +57,6 @@
     document.getElementById('iFrameElement').addEventListener("load",()=>{
         autoplay_NTV_streams()
     })
-    */
 
     document.addEventListener('DOMContentLoaded',function(){
         fetch("/contentLoaded/")
@@ -81,6 +79,9 @@
             // update URL
             let iframeElement = document.getElementById("iFrameElement");
             iframeElement.src = new_URL;
+
+            // call autoclick fcn
+            autoplay_NTV_streams()
 
             console.log(data.webcamLocationDesc, data.ShuffledURL);
             });
