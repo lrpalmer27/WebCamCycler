@@ -22,11 +22,7 @@ if debugging:
     WebCamList ='./WebcamURLs - PC ONLY.csv'
 app.config['df']= pd.read_csv(WebCamList)
 # make random number. Start with an NTV camera so we get into an active play loop.
-if firstPass == 1: 
-    app.config['RandomNo'] = 0
-    firstPass = 0
-else:
-    app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
+app.config['RandomNo'] = 0
 
 @app.route("/")
 def renderHTML():
@@ -44,11 +40,16 @@ def get_webcam_timezone_time(o=None):
     else:
         return WebCamTimeZone_time_desc
 
-def SetDataParameters():
+def SetDataParameters(FirstPass=0):
     # # read df
     app.config['df']= pd.read_csv(WebCamList)
     # get new random number
     app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
+    
+    # first pass NTV webcam to make sure autoplay starts as intended.
+    if FirstPass: 
+        app.config['RandomNo'] = 0
+       
     # update URL
     url_string= str(app.config['df']['URL'].iloc[app.config['RandomNo']])
     # Update locaton description
@@ -72,6 +73,10 @@ def UpdateTimeLoop():
 @app.route("/shuffle/")
 def Shuffle_webcam_locations():
     return SetDataParameters()
+
+@app.route("/contentLoaded/")
+def ContentLoaded():
+    return SetDataParameters(FirstPass=1)
   
 if __name__ == "__main__":
     if debugging: 

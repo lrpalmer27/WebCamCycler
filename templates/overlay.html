@@ -31,6 +31,7 @@
 </body>
 
 <script>
+    /*
     function autoplay_NTV_streams(){
         // -------------- def fcn to auto click ---------------
         //get iframe element
@@ -57,9 +58,10 @@
     document.getElementById('iFrameElement').addEventListener("load",()=>{
         autoplay_NTV_streams()
     })
+    */
 
     document.addEventListener('DOMContentLoaded',function(){
-        fetch("/shuffle/")
+        fetch("/contentLoaded/")
             .then(response => response.json())
             .then(data => {
             let t = data.Webcam_local_time;
@@ -123,7 +125,7 @@
             iframeElement.src = new_URL;
 
             // call autoclick fcn
-            autoplay_NTV_streams()
+            // autoplay_NTV_streams()
 
             console.log(data.webcamLocationDesc, data.ShuffledURL);
         })
