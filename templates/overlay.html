@@ -21,14 +21,6 @@
                     >
                 </iframe>
 
-                <!-- <iframe
-                    class="VideoItem" 
-                    src="https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtRv7RscdMl_5"
-                    allow="autoplay; encrypted-media"
-                    frameborder="0"
-                    allowfullscreen webkitallowfullscreen mozallowfullscreen muted>
-                </iframe> -->
-
             <!-- this is where the upper title block is going -->
             <div class="MainTitle">
                 <h1><span id = "Webcam_location_description"></span></h1>
@@ -59,9 +51,12 @@
 
         // click to play for NTV videos
         iframeElement.dispatchEvent(clickEvent);
-        console.log("Autoclick fcn");
-        console.log(centerX,centerY);
+        console.log("Autoclick fcn", centerX, centerY);
     }
+
+    document.getElementById('iFrameElement').addEventListener("load",()=>{
+        autoplay_NTV_streams()
+    })
 
     document.addEventListener('DOMContentLoaded',function(){
         fetch("/shuffle/")
@@ -84,15 +79,11 @@
             // update URL
             let iframeElement = document.getElementById("iFrameElement");
             iframeElement.src = new_URL;
-            
-            // call auto click fcn
-            autoplay_NTV_streams()
 
-            console.log(data);
+            console.log(data.webcamLocationDesc, data.ShuffledURL);
             });
 
     });
-
     
     function UpdateWebcamLocalTime(){
         fetch("/live/")
@@ -105,7 +96,7 @@
             WebcamLocalTimeElement.innerText = {t};
             document.getElementById('Webcam_local_time_').innerText = t;
 
-            console.log(data);
+            //console.log(data);
         })
     }
 
@@ -134,7 +125,7 @@
             // call autoclick fcn
             autoplay_NTV_streams()
 
-            console.log(data);
+            console.log(data.webcamLocationDesc, data.ShuffledURL);
         })
     }
     

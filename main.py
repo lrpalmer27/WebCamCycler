@@ -10,13 +10,23 @@ import sys
 # basics from: https://github.com/CoffeeKeyboardYouTube/TimerWebAppFlask/blob/main/templates/home.html
 #              https://www.youtube.com/watch?v=7FwXKxqfuko
 
+debugging = 0
+firstPass = 1
+
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # # read df
-app.config['df']= pd.read_csv('./WebcamURLs.csv')
-# make random number
-app.config['RandomNo']= random.randint(0,app.config['df'].shape[0]-1)
+WebCamList='./WebcamURLs.csv'
+if debugging: 
+    WebCamList ='./WebcamURLs - PC ONLY.csv'
+app.config['df']= pd.read_csv(WebCamList)
+# make random number. Start with an NTV camera so we get into an active play loop.
+if firstPass == 1: 
+    app.config['RandomNo'] = 0
+    firstPass = 0
+else:
+    app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
 
 @app.route("/")
 def renderHTML():
@@ -36,7 +46,7 @@ def get_webcam_timezone_time(o=None):
 
 def SetDataParameters():
     # # read df
-    app.config['df']= pd.read_csv('./WebcamURLs.csv')
+    app.config['df']= pd.read_csv(WebCamList)
     # get new random number
     app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
     # update URL
@@ -64,14 +74,13 @@ def Shuffle_webcam_locations():
     return SetDataParameters()
   
 if __name__ == "__main__":
-    debugging = 0
     if debugging: 
         pytz.all_timezones
     
     if sys.platform =='win32':
-        webbrowser.open('http://localhost:5000')
+        webbrowser.open('http://localhost:5050')
     
-    app.run(debug=debugging, port=5000)
+    app.run(debug=debugging, port=5050)
     
     # TODO: make the PI turn off during working hours (when I am not usually home)
     # LocalTZ = ptztz('America/Los_Angeles')

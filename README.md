@@ -3,6 +3,12 @@ This is a webcam cycler that flips through webcams of places that I like.
 
 The idea is to have this on a small picture frame style monitor in my house, like the digital picture frame products but of webcams of cool places.
 
+# How is auto-boot setup?
+Basic instructions from: https://www.youtube.com/watch?v=-L1TetCc-oc
+                        https://fuzzthepiguy.tech/browser-gui/
+
+
+added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
 
 # TODO: 
     - Convert the current .csv to .db and extract video locations, time offsets, URLs with SQL query.
