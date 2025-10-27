@@ -1,5 +1,7 @@
 #!/bin/bash
 
+sleep 5
+
 cd /home/logan/Desktop/WebCamViewer
 LOGFILE='/home/logan/Desktop/WebCamViewer/logs/logfile.txt'
 
@@ -36,7 +38,7 @@ CENTER_Y=$((SCREEN_HEIGHT / 2))
 echo 'booted'
 
 # sleep to allow the program to boot up
-sleep 20
+sleep 30
 
 echo 'done sleeping'
 # Move the mouse cursor to the center coordinates and click
@@ -56,6 +58,4 @@ cleanup () {
 
 trap cleanup SIGINT
 trap cleanup SIGTSTP
-
-read holdOpen
 

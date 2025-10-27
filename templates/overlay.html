@@ -32,60 +32,11 @@
 
 <script>
     function autoplay_NTV_streams(){
-        // -------------- def fcn to auto click ---------------
-        //get iframe element
-        let iframeElement = document.getElementById("iFrameElement");
-
-        //get center of iframe element
-        const rect = iframeElement.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-
-        var clickEvent = new MouseEvent("click", {
-            view: window,
-            bubbles: true,
-            cancelable: true, 
-            clientX: centerX,
-            clientY: centerY, 
-        });
-
-        // click to play for NTV videos
-        iframeElement.dispatchEvent(clickEvent);
-        console.log("Autoclick fcn", centerX, centerY);
-    }
-
-    document.getElementById('iFrameElement').addEventListener("load",()=>{
-        autoplay_NTV_streams()
-    })
+        fetch("/NTVCAMERA/")
+        };
 
     document.addEventListener('DOMContentLoaded',function(){
-        fetch("/contentLoaded/")
-            .then(response => response.json())
-            .then(data => {
-            let t = data.Webcam_local_time;
-            let webcamLocationDesc = data.webcamLocationDesc;
-            let new_URL = data.ShuffledURL;
-            
-            //update time element
-            let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
-            WebcamLocalTimeElement.innerText = {t};
-            document.getElementById('Webcam_local_time_').innerText = t;
-
-            // update location description element
-            let webcamLocationDescElement = document.getElementById("Webcam_location_description");
-            webcamLocationDescElement.innerText = {webcamLocationDesc};
-            document.getElementById('Webcam_location_description').innerText = webcamLocationDesc;
-
-            // update URL
-            let iframeElement = document.getElementById("iFrameElement");
-            iframeElement.src = new_URL;
-
-            // call autoclick fcn
-            autoplay_NTV_streams()
-
-            console.log(data.webcamLocationDesc, data.ShuffledURL);
-            });
-
+        ShuffleVideoSource()
     });
     
     function UpdateWebcamLocalTime(){
@@ -110,6 +61,7 @@
             let t = data.Webcam_local_time;
             let webcamLocationDesc = data.webcamLocationDesc;
             let new_URL = data.ShuffledURL;
+            let NTV = data.NTV;
 
             //update time element
             let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
@@ -126,7 +78,9 @@
             iframeElement.src = new_URL;
 
             // call autoclick fcn
-            // autoplay_NTV_streams()
+            if (NTV) {
+                autoplay_NTV_streams()
+            }
 
             console.log(data.webcamLocationDesc, data.ShuffledURL);
         })

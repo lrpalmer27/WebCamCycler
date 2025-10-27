@@ -6,6 +6,7 @@ import pandas as pd
 import random
 import webbrowser
 import sys 
+import subprocess
 
 # basics from: https://github.com/CoffeeKeyboardYouTube/TimerWebAppFlask/blob/main/templates/home.html
 #              https://www.youtube.com/watch?v=7FwXKxqfuko
@@ -40,22 +41,23 @@ def get_webcam_timezone_time(o=None):
     else:
         return WebCamTimeZone_time_desc
 
-def SetDataParameters(FirstPass=0):
+def SetDataParameters():
     # # read df
     app.config['df']= pd.read_csv(WebCamList)
     # get new random number
     app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
-    
-    # first pass NTV webcam to make sure autoplay starts as intended.
-    if FirstPass: 
-        app.config['RandomNo'] = 0
        
     # update URL
     url_string= str(app.config['df']['URL'].iloc[app.config['RandomNo']])
     # Update locaton description
     webcamLocationDesc=str(app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']])
-    #re-render html with new URL
-    # renderHTML()
+    # if NTV:
+    sourceName = app.config['df']['SOURCE'].iloc[app.config['RandomNo']]
+    if sourceName == 'NTV':
+        ifNTV = 1
+    else:
+        ifNTV = 0
+        
     if debugging: 
         print("Shuffled to new webcam, random No.: ",app.config['RandomNo'])
         print("Location: ",webcamLocationDesc)
@@ -64,7 +66,7 @@ def SetDataParameters(FirstPass=0):
     
     TimeDataList=get_webcam_timezone_time(1)
     
-    return jsonify({'Webcam_local_time':get_webcam_timezone_time(),'webcamLocationDesc':webcamLocationDesc,'ShuffledURL':url_string})
+    return jsonify({'Webcam_local_time':get_webcam_timezone_time(),'webcamLocationDesc':webcamLocationDesc,'ShuffledURL':url_string,'NTV':ifNTV})
     
 @app.route("/live/")
 def UpdateTimeLoop():
@@ -77,6 +79,13 @@ def Shuffle_webcam_locations():
 @app.route("/contentLoaded/")
 def ContentLoaded():
     return SetDataParameters(FirstPass=1)
+
+@app.route("/NTVCAMERA/")
+# not currently being used.
+def clickCenter():
+    if sys.platform =='win32':
+        return None
+    subprocess.call(["xdotool","mousemove", "$CENTER_X", "$CENTER_Y", "click", "1"])
   
 if __name__ == "__main__":
     if debugging: 
