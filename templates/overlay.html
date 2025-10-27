@@ -2,10 +2,13 @@
 <html>
 <head>
     <!-- This template is an overlay for the webcam viewer cycler app. -->
+    <link href="https://vjs.zencdn.net/8.23.4/video-js.css" rel="stylesheet" />
+    <link rel="stylesheet" href="../static/styling.css">
+    <script defer src="https://vjs.zencdn.net/8.23.4/video.min.js"></script>
+    <script defer src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
     <title>
         Logan's RPI Webcam Cycler
     </title>
-    <link rel="stylesheet" href="../static/styling.css">
 </head>
 <body>
     <main>
@@ -15,11 +18,27 @@
                     class="VideoItem" 
                     id="iFrameElement"
                     src="id"
+                    controls
+                    preload="auto"
                     muted allowfullscreen webkitallowfullscreen mozallowfullscreen
                     allow="autoplay; fullscreen; encrypted-media"
                     frameborder="0"
+                    data-setup="{}"
                     >
                 </iframe>
+
+                <!-- <video
+                    class="VideoItem" 
+                    id="iFrameElement"
+                    src="id"
+                    controls
+                    preload="auto"
+                    muted allowfullscreen webkitallowfullscreen mozallowfullscreen
+                    allow="autoplay; fullscreen; encrypted-media"
+                    frameborder="0"
+                    data-setup="{}"
+                    >
+                </video> -->
 
             <!-- this is where the upper title block is going -->
             <div class="MainTitle">
