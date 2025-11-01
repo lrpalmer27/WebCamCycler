@@ -6,24 +6,25 @@
     position: absolute;
     color:white;
     text-align: center;
-    background-color:rgba(184, 184, 184, 0.60);
+    background-color:rgba(184, 184, 184, 0.5);
     padding: 0.25px;
     font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', 'sans-serif';
-    /* font:200; */
     /* Font sizes that look ok: 
     Computer monitor - 10pt
     TV - 15pt
      */
-    /* font-size: 15pt;     */
-    font-size: 40%;
+    font-size: 10pt;    
 }
 
 .videoMainBlock{
     margin-left:auto;
     margin-right:auto;
     width:100%;
-    /* height: 100%;  */
-    aspect-ratio: 16/9;
+    /* aspect-ratio: 16/9; */
+
+    /* PI only: */
+    aspect-ratio: 154.08/85.92;
+
     position: absolute;
     display: flex;
 }
