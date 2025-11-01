@@ -12,7 +12,6 @@ import subprocess
 #              https://www.youtube.com/watch?v=7FwXKxqfuko
 
 debugging = 0
-firstPass = 1
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
@@ -75,10 +74,6 @@ def UpdateTimeLoop():
 @app.route("/shuffle/")
 def Shuffle_webcam_locations():
     return SetDataParameters()
-
-@app.route("/contentLoaded/")
-def ContentLoaded():
-    return SetDataParameters(FirstPass=1)
 
 @app.route("/NTVCAMERA/")
 # not currently being used.
