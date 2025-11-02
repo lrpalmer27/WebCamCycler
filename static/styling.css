@@ -4,15 +4,13 @@
     margin-top: 0%;
     width: 100%;
     position: absolute;
+    background-color:rgba(184, 184, 184, 0.9);
+    padding: 0.25px;
+
+    /* text formatting items below */
     color:white;
     text-align: center;
-    background-color:rgba(184, 184, 184, 0.5);
-    padding: 0.25px;
     font-family:'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', 'Geneva', 'Verdana', 'sans-serif';
-    /* Font sizes that look ok: 
-    Computer monitor - 10pt
-    TV - 15pt
-     */
     font-size: 10pt;    
 }
 
@@ -20,22 +18,16 @@
     margin-left:auto;
     margin-right:auto;
     width:100%;
+    position: absolute;
+    display: flex;
+
+    /* PC only: */
     /* aspect-ratio: 16/9; */
 
     /* PI only: */
     aspect-ratio: 154.08/85.92;
-
-    position: absolute;
-    display: flex;
 }
 
 .VideoItem{
-    /* margin-left:auto;
-    margin-right:auto;
-    position:absolute;
-    display:flex;
-    justify-content: center;
-    align-items: center; */
     width: 100%;   
-    /* height: 100%; */
 }
