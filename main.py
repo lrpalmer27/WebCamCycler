@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # # read df
-WebCamList='./WebcamURLs_rpiSafe.csv'
+WebCamList='./WebcamURLs_All.csv'
 if debugging: 
     WebCamList ='./WebcamURLs_All.csv'
 app.config['df']= pd.read_csv(WebCamList)
@@ -45,17 +45,12 @@ def SetDataParameters():
     app.config['df']= pd.read_csv(WebCamList)
     # get new random number
     app.config['RandomNo'] = random.randint(0,app.config['df'].shape[0]-1)
-       
     # update URL
     url_string= str(app.config['df']['URL'].iloc[app.config['RandomNo']])
     # Update locaton description
     webcamLocationDesc=str(app.config['df']['DESCRIPTION'].iloc[app.config['RandomNo']])
-    # if NTV:
+    # send source name field to app
     sourceName = app.config['df']['SOURCE'].iloc[app.config['RandomNo']]
-    if sourceName == 'NTV':
-        ifNTV = 1
-    else:
-        ifNTV = 0
         
     if debugging: 
         print("Shuffled to new webcam, random No.: ",app.config['RandomNo'])
@@ -63,9 +58,7 @@ def SetDataParameters():
         print("New URL: ", url_string)
         print("check str: ", webcamLocationDesc)
     
-    TimeDataList=get_webcam_timezone_time(1)
-    
-    return jsonify({'Webcam_local_time':get_webcam_timezone_time(),'webcamLocationDesc':webcamLocationDesc,'ShuffledURL':url_string,'NTV':ifNTV})
+    return jsonify({'Webcam_local_time':get_webcam_timezone_time(),'webcamLocationDesc':webcamLocationDesc,'ShuffledURL':url_string, 'VidSource':sourceName})
     
 @app.route("/live/")
 def UpdateTimeLoop():
@@ -76,7 +69,6 @@ def Shuffle_webcam_locations():
     return SetDataParameters()
 
 @app.route("/NTVCAMERA/")
-# not currently being used.
 def clickCenter():
     if sys.platform !='win32':
         # click center of screen, to play NTV livestreams
@@ -95,5 +87,3 @@ if __name__ == "__main__":
     # TODO: make the PI turn off during working hours (when I am not usually home)
     # LocalTZ = ptztz('America/Los_Angeles')
     # LOCALTIME=datetime.now(tz=LocalTZ)
-    
-    # TODO: make it so this gets displayed full screen on pi.

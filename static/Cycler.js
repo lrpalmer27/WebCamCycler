@@ -1,11 +1,7 @@
 
-function autoplay_NTV_streams(){
-    fetch("/NTVCAMERA/")
-    };
-
 document.addEventListener('DOMContentLoaded',function(){
     ShuffleVideoSource()
-});
+})
 
 function UpdateWebcamLocalTime(){
     fetch("/live/")
@@ -17,8 +13,6 @@ function UpdateWebcamLocalTime(){
         let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
         WebcamLocalTimeElement.innerText = {t};
         document.getElementById('Webcam_local_time_').innerText = t;
-
-        //console.log(data);
     })
 }
 
@@ -29,7 +23,13 @@ function ShuffleVideoSource(){
         let t = data.Webcam_local_time;
         let webcamLocationDesc = data.webcamLocationDesc;
         let new_URL = data.ShuffledURL;
-        let NTV = data.NTV;
+        let VideoSource = data.VidSource;
+        let iframeElement = document.getElementById("iFrameElement");
+        let VideoElement = document.getElementById("VideoElement");
+
+        // hide both video elements to start: 
+        iframeElement.hidden = true;
+        VideoElement.hidden = true;
 
         //update time element
         let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
@@ -41,17 +41,44 @@ function ShuffleVideoSource(){
         webcamLocationDescElement.innerText = {webcamLocationDesc};
         document.getElementById('Webcam_location_description').innerText = webcamLocationDesc;
 
-        // update URL
-        let iframeElement = document.getElementById("iFrameElement");
-        iframeElement.src = new_URL;
+        // ------------------------ source dependent video handling below: ------------------------
+        if (VideoSource === 'm3u8'){
+            // // // this is for handling HLS video files streaming (.m3u8)
+            // show video device we dont want
+            VideoElement.hidden = false;
 
-        // call autoclick fcn
-        if (NTV) {
-            autoplay_NTV_streams()
-        }
+            // play video with HLS.js -- this is needed on Rpi
+            const hls = new Hls();
+            hls.loadSource(new_URL);
+            hls.attachMedia(VideoElement);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => VideoElement.play());
 
-        console.log(data.webcamLocationDesc, data.ShuffledURL);
+            // update URL on video device we do want.
+            // VideoElement.src = new_URL;
+
+        } else if (VideoSource === 'NTV'){
+            // // // this is for handling NTV video streams that require us to click play each time.
+            // hide video device we dont want
+            iframeElement.hidden = false;
+            // update URL on video device we do want.
+            iframeElement.src = new_URL;
+            //autoplay NTV video streams:
+            autoplay_NTV_streams();
+        } else {
+            // // // this is for handling generic web based video streams like youtube
+            // hide video device we dont want
+            iframeElement.hidden = false;
+            // update URL on video device we do want.
+            iframeElement.src = new_URL;
+        };
+
+        console.log(data.ShuffledURL);
     })
+}
+
+function autoplay_NTV_streams(){
+    // this calls a python function that calls on an RPI library to send a click
+    fetch("/NTVCAMERA/")
 }
 
 setInterval(UpdateWebcamLocalTime,1000)

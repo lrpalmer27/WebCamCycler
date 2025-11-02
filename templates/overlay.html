@@ -8,9 +8,10 @@
     <script defer src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <!-- video JS things here -->
-    <!-- <link href="https://vjs.zencdn.net/8.23.4/video-js.css" rel="stylesheet" />
+    <link href="https://vjs.zencdn.net/8.23.4/video-js.css" rel="stylesheet" />
     <script defer src="https://vjs.zencdn.net/8.23.4/video.min.js"></script>
-    <script defer src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script> -->
+    <script defer src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
     <!-- cycler JS script: -->
     <script defer src="/static/Cycler.js"></script>
@@ -23,25 +24,22 @@
     <main>
         <!-- video block here -->
         <div class="videoMainBlock">
-                <!-- <iframe
-                    class="VideoItem" 
+                <iframe
                     id="iFrameElement"
-                    src="id"
+                    class="VideoDisplayingItem" 
                     frameborder="0"
                     preload="auto"
-                    controls
                     allowfullscreen webkitallowfullscreen mozallowfullscreen muted autoplay
                     >
-                </iframe> -->
+                </iframe>
 
                 <video
-                    class="VideoItem" 
-                    id="iFrameElement"
-                    src="id"
+                    id="VideoElement"
+                    class="VideoDisplayingItem" 
                     frameborder="0"
-                    preload="auto"
-                    controls
                     allowfullscreen webkitallowfullscreen mozallowfullscreen muted autoplay
+                    allow="autoplay; fullscreen; encrypted-media"
+                    preload="auto"
                     >
                 </video>
 
