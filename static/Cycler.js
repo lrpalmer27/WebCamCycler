@@ -62,8 +62,11 @@ function ShuffleVideoSource(){
             iframeElement.hidden = false;
             // update URL on video device we do want.
             iframeElement.src = new_URL;
+
             //autoplay NTV video streams:
-            autoplay_NTV_streams();
+            fetch("/NTVCAMERA/");
+            console.log("fetching autoplay");
+            
         } else {
             // // // this is for handling generic web based video streams like youtube
             // hide video device we dont want
@@ -74,11 +77,6 @@ function ShuffleVideoSource(){
 
         console.log(data.ShuffledURL);
     })
-}
-
-function autoplay_NTV_streams(){
-    // this calls a python function that calls on an RPI library to send a click
-    fetch("/NTVCAMERA/")
 }
 
 setInterval(UpdateWebcamLocalTime,1000)
