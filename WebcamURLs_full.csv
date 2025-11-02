@@ -1,15 +1,4 @@
 ﻿DESCRIPTION,URL,PYTZ TIMEZONE,SOURCE
-St. John's from Signal Hill,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/ime5SjsYrM9_5?autoplay=1&mute=1,Canada/Newfoundland,NTV
-St. John's from Admirals Greens,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtRv7RscdMl_5?autoplay=1&mute=1,Canada/Newfoundland,NTV
-Downtown St. John's,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/FtiWjTscdMV_5?autoplay=1&mute=1,Canada/Newfoundland,NTV
-Quidi Vidi Lake,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GnpYXwscJf1_5?autoplay=1&mute=1,Canada/Newfoundland,NTV
-George Street,https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/GNPhLAscIFd_5?autoplay=1&mute=1,Canada/Newfoundland,NTV
-Quidi Vidi Village (behind QV brewery),https://c.streamhoster.com/embed/media/Wwsd4L/ifYPgArsAHz/eJLPobsASYm_5?autoplay=1&mute=1,Canada/Newfoundland,NTV
-Green Shore Summerside,https://www.youtube.com/embed/6ezJq4jqAGk?autoplay=1&mute=1,Canada/Atlantic,Youtube
-Edgewood Tahoe,https://share.earthcam.net/tJ90CoLmq7TzrY396Yd88EuwncqS_hRHM-P6bJrwPcQ!.tJ90CoLmq7TzrY396Yd88O87k9FviI0KvsfIt7imMzg!.tJ90CoLmq7TzrY396Yd88Jwhh43XxoA_EoIOx8e0mQY!,US/Pacific,Earthcam
-Zephyr Cove,https://www.youtube.com/embed/Lk0Z5ExUWL0?autoplay=1&mute=1,US/Pacific,Youtube
-Reno Arch,https://www.youtube.com/embed/laopqyiYlxg?autoplay=1&mute=1,US/Pacific,Youtube
-Downtown OKC,https://g1.ipcamlive.com/player/player.php?alias=63bc6f8d7d9f4&disabledownloadbutton=1&autoplay=1&mute=1&hd=1,US/Central,IPCam
 Mt Rose Lodge,https://5f4ad95bcff44.streamlock.net:444/mtrosecam/mtrosecam.stream/main_playlist.m3u8,US/Pacific,m3u8
 Mt Rose Summit,https://5f9f690034fb0.streamlock.net:444/mtrose1/mtrose1.stream/main_playlist.m3u8,US/Pacific,m3u8
 Mt Rose North View,https://streamer4.brownrice.com/mtrosesummit/mtrosesummit.stream/main_playlist.m3u8,US/Pacific,m3u8
@@ -17,3 +6,7 @@ Northstar Mt. Pluto Summit,https://streamer6.brownrice.com/northstarspluto/north
 Northstar mid-mountain,https://streamer4.brownrice.com/northstarmidmountain/northstarmidmountain.stream/main_playlist.m3u8,US/Pacific,m3u8
 Heavenly Gondola Midstation,https://streamer2.brownrice.com/heavenlymidstation/heavenlymidstation.stream/main_playlist.m3u8,US/Pacific,m3u8
 Heavenly Top of Tram,https://6555b9ac80a95.streamlock.net:444/heavenlytram/heavenlytram.stream/main_playlist.m3u8,US/Pacific,m3u8
+Charlottetown ,https://media.gpei.ca/islandcam/guild.stream/playlist.m3u8,Canada/Atlantic,m3u8
+Brookvale,https://media.gpei.ca/brookvale/Brookvale New.stream/playlist.m3u8,Canada/Atlantic,
+Mt. Rose West Meadow,https://d2wse2.its.nv.gov:443/renoxcd02/94ce9220-7e98-417b-9c9a-5ce303401695_hspflirxcd02_public.stream/playlist.m3u8,US/Pacific,
+Sand Harbor,https://d2wse2.its.nv.gov:443/renoxcd02/8e852198-2a9f-429f-8f9a-c7042fed512d_hspflirxcd02_public.stream/playlist.m3u8,US/Pacific,
