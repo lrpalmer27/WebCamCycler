@@ -11,15 +11,15 @@ import subprocess
 # basics from: https://github.com/CoffeeKeyboardYouTube/TimerWebAppFlask/blob/main/templates/home.html
 #              https://www.youtube.com/watch?v=7FwXKxqfuko
 
-debugging = 0
+debugging = 1
 
 app = Flask(__name__)
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 
 # # read df
-WebCamList='./WebcamURLs.csv'
+WebCamList='./WebcamURLs_rpiSafe.csv'
 if debugging: 
-    WebCamList ='./WebcamURLs - PC ONLY.csv'
+    WebCamList ='./WebcamURLs_All.csv'
 app.config['df']= pd.read_csv(WebCamList)
 # make random number. Start with an NTV camera so we get into an active play loop.
 app.config['RandomNo'] = 0
@@ -78,9 +78,10 @@ def Shuffle_webcam_locations():
 @app.route("/NTVCAMERA/")
 # not currently being used.
 def clickCenter():
-    if sys.platform =='win32':
-        return None
-    subprocess.call(["xdotool","mousemove", "$CENTER_X", "$CENTER_Y", "click", "1"])
+    if sys.platform !='win32':
+        # click center of screen, to play NTV livestreams
+        # this is a workaround because the NTV livestreams try to force audio, hence no autoplay.
+        subprocess.call(["xdotool","mousemove", "$CENTER_X", "$CENTER_Y", "click", "1"])
   
 if __name__ == "__main__":
     if debugging: 
