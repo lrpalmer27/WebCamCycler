@@ -9,8 +9,11 @@ This project flips through various live web cameras in places that I like.
 Basic instructions from: https://www.youtube.com/watch?v=-L1TetCc-oc
                         https://fuzzthepiguy.tech/browser-gui/
 
-
 added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
+
+```
+@lxterminal -e /home/logan/Desktop/WebCamViewer/rpiStart.sh &
+```
 
 # Hardware
 Display: Raspberry Pi 7" touchscreen
