@@ -13,6 +13,8 @@ function UpdateWebcamLocalTime(){
         let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
         WebcamLocalTimeElement.innerText = {t};
         document.getElementById('Webcam_local_time_').innerText = t;
+
+        console.log('LOCALTIME: ',t)
     })
 }
 
