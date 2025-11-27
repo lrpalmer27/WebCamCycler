@@ -63,7 +63,9 @@ def SetDataParameters():
     
 @app.route("/live/")
 def UpdateTimeLoop():
-    return jsonify({'Webcam_local_time': get_webcam_timezone_time()})
+    t=get_webcam_timezone_time()
+    print("LIVE ",t)
+    return jsonify({'Webcam_local_time':t})
 
 @app.route("/shuffle/")
 def Shuffle_webcam_locations():
