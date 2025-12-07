@@ -70,6 +70,19 @@ def UpdateTimeLoop():
 @app.route("/shuffle/")
 def Shuffle_webcam_locations():
     return SetDataParameters()
+
+@app.route("/NTVCAMERA/")
+def clickCenter():
+    if sys.platform =='win32':
+        return jsonify({'autoclicked':0})   
+    
+    print("try to click")
+    w, h = map(int, subprocess.check_output(["xdotool", "getdisplaygeometry"]).split())
+    CENTER_X, CENTER_Y = w // 2, h // 2
+    subprocess.call(["xdotool","mousemove", "$CENTER_X", "$CENTER_Y", "click", "1"])
+    print("Clicked!")
+    
+    return jsonify({'autoclicked':1})   
   
 if __name__ == "__main__":
     if debugging: 
