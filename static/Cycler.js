@@ -46,8 +46,9 @@ function ShuffleVideoSource(){
         // ------------------------ source dependent video handling below: ------------------------
         if (VideoSource === 'm3u8'){
             // // // this is for handling HLS video files streaming (.m3u8)
-            // show video device we dont want
+            // un-hide video element, hide un-used iframe element
             VideoElement.hidden = false;
+            iframeElement.hidden = true;
 
             // play video with HLS.js -- this is needed on Rpi
             const hls = new Hls();
@@ -60,8 +61,10 @@ function ShuffleVideoSource(){
 
         } else if (VideoSource === 'NTV'){
             // // // this is for handling NTV video streams that require us to click play each time.
-            // hide video device we dont want
+            // un-hide iframe element, hide un-used video frame element
             iframeElement.hidden = false;
+            VideoElement.hidden = true;
+            
             // update URL on video device we do want.
             iframeElement.src = new_URL;
 
@@ -71,9 +74,11 @@ function ShuffleVideoSource(){
             
         } else {
             // // // this is for handling generic web based video streams like youtube
-            // hide video device we dont want
+            // un-hide iframe element, hide un-used video frame element
             iframeElement.hidden = false;
-            // update URL on video device we do want.
+            VideoElement.hidden = true;
+
+            // update URL on video source we do want.
             iframeElement.src = new_URL;
         };
 
