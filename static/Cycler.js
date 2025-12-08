@@ -57,7 +57,7 @@ function ShuffleVideoSource(){
             hls.on(Hls.Events.MANIFEST_PARSED, () => VideoElement.play());
 
             // update URL on video device we do want.
-            // VideoElement.src = new_URL;
+            VideoElement.src = new_URL;
 
         } else if (VideoSource === 'NTV'){
             // // // this is for handling NTV video streams that require us to click play each time.
