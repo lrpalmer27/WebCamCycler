@@ -33,6 +33,9 @@ function ShuffleVideoSource(){
         iframeElement.hidden = true;
         VideoElement.hidden = true;
 
+        //initiate HLS element for video element to use later
+        const hls = new Hls();
+
         //update time element
         let WebcamLocalTimeElement = document.getElementById("Webcam_local_time_");
         WebcamLocalTimeElement.innerText = {t};
@@ -48,16 +51,15 @@ function ShuffleVideoSource(){
             // // // this is for handling HLS video files streaming (.m3u8)
             // un-hide video element, hide un-used iframe element
             VideoElement.hidden = false;
-            iframeElement.hidden = true;
-
-            // play video with HLS.js -- this is needed on Rpi
-            const hls = new Hls();
-            hls.loadSource(new_URL);
-            hls.attachMedia(VideoElement);
-            hls.on(Hls.Events.MANIFEST_PARSED, () => VideoElement.play());
+            // iframeElement.hidden = true;
 
             // update URL on video device we do want.
             VideoElement.src = new_URL;
+
+            // play video with HLS.js -- this is needed on Rpi
+            hls.loadSource(new_URL);
+            hls.attachMedia(VideoElement);
+            hls.on(Hls.Events.MANIFEST_PARSED, () => VideoElement.play());
 
         } else if (VideoSource === 'NTV'){
             // // // this is for handling NTV video streams that require us to click play each time.

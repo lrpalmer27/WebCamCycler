@@ -9,6 +9,12 @@ echo "rpiScheduledReboots.sh running @ $(date "+%r")" >> "$LOGFILE"
 # run on main display 
 export DISPLAY=:0
 
+# add this to kill this program - testing a different method to get the same functionality.
+if true; then 
+    echo "shutting down"
+    exit 0 
+fi
+
 # reboot every 6h
 RESETTIME="$(date -d "+6 hour")"
 echo "Rebooting in 6h, at $RESETTIME" | tee -a "$LOGFILE"
