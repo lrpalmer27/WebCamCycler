@@ -31,8 +31,8 @@ chromium-browser --start-fullscreen --incognito --app http://localhost:5050 &
 ## -- this section has things for local streaming. Workflow is flask hosting of webpage, ffmpeg to watch (record) the browser, threadfin serves to plex
 # restart threadfin 
 lxterminal -e /home/logan/threadfin/threadfin &
-lxterminal -e /home/logan/Desktop/WebCamViewer/ffmpeg.sh &
-lxterminal -e /home/logan/Desktop/WebCamViewer/httpserver.sh &
+lxterminal -e bash -c /home/logan/Desktop/WebCamViewer/ffmpeg.sh &
+lxterminal -e bash -c /home/logan/Desktop/WebCamViewer/httpserver.sh &
 
 # Get the screen resolution using xrandr
 # The output is parsed to extract the width and height of the primary display.
