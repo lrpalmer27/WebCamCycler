@@ -18,15 +18,21 @@ sudo fuser -k 5050/tcp
 lxterminal -e /home/logan/Desktop/WebCamViewer/rpiScheduledReboots.sh &
 echo "rpiScheduledReboots.sh opened @ $(date "+%r")" >> "$LOGFILE"
 
-# open chromium full screen 
-chromium-browser --start-fullscreen --incognito --app http://localhost:5050 &
-
 # start venv
 source /home/logan/Desktop/WebCamViewer/myvenv/bin/activate
 
 # run webcam cycler
 python /home/logan/Desktop/WebCamViewer/main.py &
 echo "python file opened" | tee -a "$LOGFILE"
+
+# open chromium full screen 
+chromium-browser --start-fullscreen --incognito --app http://localhost:5050 &
+
+## -- this section has things for local streaming. Workflow is flask hosting of webpage, ffmpeg to watch (record) the browser, threadfin serves to plex
+# restart threadfin 
+lxterminal -e /home/logan/threadfin/threadfin &
+lxterminal -e /home/logan/Desktop/WebCamViewer/ffmpeg.sh &
+lxterminal -e /home/logan/Desktop/WebCamViewer/httpserver.sh &
 
 # Get the screen resolution using xrandr
 # The output is parsed to extract the width and height of the primary display.
@@ -52,6 +58,8 @@ read HoldOpen
 cleanup () {
 	echo 'Cleaning up program and shutting down' >> "$LOGFILE"
 	pkill chromium
+	pkill ffmpeg
+	pkill threadfin
 	sudo fuser -k 5050/tcp
 }
 

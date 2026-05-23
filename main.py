@@ -91,7 +91,7 @@ if __name__ == "__main__":
     if sys.platform =='win32':
         webbrowser.open('http://localhost:5050')
     
-    app.run(debug=debugging, port=5050)
+    app.run(host='0.0.0.0', debug=debugging, port=5050)
     
     # TODO: make the PI turn off during working hours (when I am not usually home)
     # LocalTZ = ptztz('America/Los_Angeles')

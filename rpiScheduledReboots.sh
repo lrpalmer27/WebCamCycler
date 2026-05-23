@@ -16,4 +16,7 @@ echo "Rebooting in 6h, at $RESETTIME" | tee -a "$LOGFILE"
 # do the actual waiting here
 sleep 6h
 echo "Done Sleeping. Current time $(date "+%r"). Rebooting now" | tee -a "$LOGFILE"
+
+#clean hls folder
+sudo rm -r ~/hls_stream/*
 sudo reboot
