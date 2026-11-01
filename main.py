@@ -2,7 +2,6 @@ import csv
 import logging
 import os
 import random
-import subprocess
 import sys
 import threading
 import webbrowser
@@ -240,39 +239,6 @@ def navigate_camera(direction):
         camera = cameras[new_index]
 
     return jsonify(camera_response(new_index, camera))
-
-
-@app.route("/NTVCAMERA/")
-def click_center():
-    if sys.platform == "win32":
-        return jsonify({"autoclicked": False, "reason": "not_supported"})
-
-    try:
-        geometry = subprocess.run(
-            ["xdotool", "getdisplaygeometry"],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        ).stdout.split()
-        width, height = map(int, geometry)
-        subprocess.run(
-            [
-                "xdotool",
-                "mousemove",
-                str(width // 2),
-                str(height // 2),
-                "click",
-                "1",
-            ],
-            check=True,
-            timeout=5,
-        )
-    except (OSError, ValueError, subprocess.SubprocessError) as error:
-        logger.exception("Unable to activate NTV camera")
-        return jsonify({"autoclicked": False, "error": str(error)}), 503
-
-    return jsonify({"autoclicked": True})
 
 
 @app.errorhandler(500)

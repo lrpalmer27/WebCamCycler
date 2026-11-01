@@ -529,11 +529,6 @@ function promoteStagedCamera(data) {
     activeHls = activeSlot.hls;
     stagedHls = null;
     updateCameraLabels(data);
-    if (data.VidSource === "NTV") {
-        fetchJSON("/NTVCAMERA/").catch((error) => {
-            console.warn("Unable to activate NTV camera:", error);
-        });
-    }
 
     window.setTimeout(() => {
         clearSlot(stagingSlot);
