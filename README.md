@@ -5,6 +5,62 @@ The conceptual idea comes from a live photo frame that I was recently gifted by 
 
 This project flips through various live web cameras in places that I like.
 
+## Running and checking the cameras
+
+### Start locally on Windows
+
+Double-click `run_local.bat` (or run it from Command Prompt). It starts the
+viewer at `http://127.0.0.1:5050/`; open that address in Chrome or your preferred
+browser. The script uses the project's `.venv` Python if present, or the
+`python` command on your PATH. If you need to install dependencies first, open
+a terminal in the project folder and run:
+
+```
+python -m pip install -r requirements.txt
+```
+
+The server runs in a separate minimized console window; close that window to
+stop it. If the server is already responding on port `5050`, the command reuses
+it. You can also run `python main.py` directly; on Windows that opens the
+viewer in your default browser.
+
+This local setup runs the same Flask app, camera list, and viewer as the Pi, but
+does not launch the Pi startup scripts, kiosk mode, scheduled services, or
+hardware-specific mouse automation. Camera video is loaded directly from its
+third-party provider, so your PC needs internet access and some feeds may not
+be embeddable or available.
+
+### Check the camera list and server
+
+- `http://127.0.0.1:5050/health/` reports whether the app is running and how
+  many camera entries it loaded.
+- `http://127.0.0.1:5050/cameras/` lists every configured camera name and
+  playback type. It is useful for confirming that the entries in
+  `WebcamURLs_All.csv` were loaded.
+- `http://127.0.0.1:5050/` opens the viewer.
+
+Use the left and right edge buttons (or Left/Right arrow keys) to step backward
+or forward through the camera list in CSV order. Navigation wraps at both ends.
+The normal timed camera shuffle continues to work as before.
+
+The viewer also loads the next camera in a hidden, muted player while the
+current stream is showing, then crossfades when it is ready. HLS feeds can be
+buffered before the switch; embedded feeds are loaded in advance, though their
+providers do not always expose when playback is actually ready. Preloading uses
+extra bandwidth and may not avoid a delay for a slow or unavailable feed.
+
+The camera list is validated at startup. Missing columns, blank values,
+unsupported playback types, invalid URLs, and unknown time zones are reported
+instead of producing hard-to-diagnose playback errors later. If an HLS feed
+fails or stalls, the viewer attempts recovery and then moves on to another
+camera. Network and playback errors appear in the overlay and are logged in the
+browser console.
+
+Camera feeds are hosted by third parties, so a valid entry in `/cameras/` does
+not guarantee that its provider is currently online or permits embedding.
+Check the browser console and the provider's page if one specific feed remains
+unavailable.
+
 ## How is auto-boot setup?
 Basic instructions from: https://www.youtube.com/watch?v=-L1TetCc-oc
                         https://fuzzthepiguy.tech/browser-gui/
@@ -12,8 +68,14 @@ Basic instructions from: https://www.youtube.com/watch?v=-L1TetCc-oc
 added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
 
 ```
-@lxterminal -e /home/logan/Desktop/WebCamViewer/rpiStart.sh &
+@lxterminal -e bash /home/logan/Desktop/WebCamViewer/rpiStart.sh &
 ```
+
+`rpiStart.sh` launches `rpiHealthWatchdog.sh`, which checks the local health
+endpoint and restarts only the Flask process if it stops responding. The old
+six-hour scheduled system reboot has been removed. The Pi startup scripts use
+the paths and virtual-environment location documented in the script; update
+those paths if the project is installed elsewhere.
 
 ## Rotate Display
 Because of the wiring direction on the pi, I want the screen to be 'upside down'. To flip the display output: 
@@ -46,3 +108,11 @@ The mounting method uses 4x M3x0.5x8mm phillips button head bolts, as shown, the
 
 # TODO List: 
     - Add touchscreen buttons to go forward and backwards in recent videos, incase you want to watch the previous video again..?
+
+## Tests
+
+Run the camera-list and route tests on your PC with:
+
+```
+python -m unittest discover -s tests
+```

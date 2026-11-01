@@ -1,7 +1,9 @@
 #!/bin/bash
 
 cd /home/logan/Desktop/WebCamViewer
+mkdir -p logs
 LOGFILE='/home/logan/Desktop/WebCamViewer/logs/logfile.txt'
+PIDFILE='/home/logan/Desktop/WebCamViewer/logs/webcam-cycler.pid'
 
 echo 'rpiStart.sh opened' >> "$LOGFILE"
 
@@ -11,19 +13,31 @@ export DISPLAY=:0
 # kill browser
 pkill chromium
 
-#kill existing flask server on port 5050
-sudo fuser -k 5050/tcp
+# stop the previously recorded Flask process if it is still running
+if [[ -f "$PIDFILE" ]]; then
+    OLD_PID="$(cat "$PIDFILE")"
+    OLD_COMMAND=''
+    if [[ "$OLD_PID" =~ ^[0-9]+$ ]] && [[ -r "/proc/$OLD_PID/cmdline" ]]; then
+        OLD_COMMAND="$(tr '\0' ' ' < "/proc/$OLD_PID/cmdline")"
+    fi
+    if [[ "$OLD_COMMAND" == *'/home/logan/Desktop/WebCamViewer/main.py'* ]] && kill -0 "$OLD_PID" 2>/dev/null; then
+        kill "$OLD_PID"
+        sleep 2
+    fi
+fi
 
-# open scheduled reboot tool - this keeps memory useage low, so the browser doesnt crash
-lxterminal -e /home/logan/Desktop/WebCamViewer/rpiScheduledReboots.sh &
-echo "rpiScheduledReboots.sh opened @ $(date "+%r")" >> "$LOGFILE"
+# monitor the Flask health endpoint instead of rebooting the Pi every six hours
+bash /home/logan/Desktop/WebCamViewer/rpiHealthWatchdog.sh >> "$LOGFILE" 2>&1 &
+WATCHDOG_PID=$!
+echo "rpiHealthWatchdog.sh opened with PID $WATCHDOG_PID" >> "$LOGFILE"
 
 # start venv
 source /home/logan/Desktop/WebCamViewer/myvenv/bin/activate
 
 # run webcam cycler
-python /home/logan/Desktop/WebCamViewer/main.py &
-echo "python file opened" | tee -a "$LOGFILE"
+python /home/logan/Desktop/WebCamViewer/main.py >> "$LOGFILE" 2>&1 &
+echo $! > "$PIDFILE"
+echo "python file opened with PID $(cat "$PIDFILE")" | tee -a "$LOGFILE"
 
 # open chromium full screen 
 chromium-browser --start-fullscreen --incognito --app http://localhost:5050 &
@@ -53,16 +67,29 @@ xdotool mousemove $CENTER_X $CENTER_Y click 1
 
 echo 'clicked center'  | tee -a "$LOGFILE"
 
-read HoldOpen
-
 cleanup () {
 	echo 'Cleaning up program and shutting down' >> "$LOGFILE"
+	if kill -0 "$WATCHDOG_PID" 2>/dev/null; then
+		kill "$WATCHDOG_PID"
+		wait "$WATCHDOG_PID" 2>/dev/null
+	fi
 	pkill chromium
 	pkill ffmpeg
 	pkill threadfin
-	sudo fuser -k 5050/tcp
+	if [[ -f "$PIDFILE" ]]; then
+		APP_PID="$(cat "$PIDFILE")"
+		APP_COMMAND=''
+		if [[ "$APP_PID" =~ ^[0-9]+$ ]] && [[ -r "/proc/$APP_PID/cmdline" ]]; then
+			APP_COMMAND="$(tr '\0' ' ' < "/proc/$APP_PID/cmdline")"
+		fi
+		if [[ "$APP_COMMAND" == *'/home/logan/Desktop/WebCamViewer/main.py'* ]] && kill -0 "$APP_PID" 2>/dev/null; then
+			kill "$APP_PID"
+		fi
+		rm -f "$PIDFILE"
+	fi
 }
 
 trap cleanup SIGINT
 trap cleanup SIGTSTP
 
+read HoldOpen
