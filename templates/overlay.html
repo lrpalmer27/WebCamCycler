@@ -1,55 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <!-- This template is an overlay for the webcam viewer cycler app. -->
-    <link rel="stylesheet" href="../static/styling.css">
-
-    <!-- HLS.js decoder (for missing HLS (m3u8) codec) -->
-    <script defer src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
-    <!-- video JS things here -->
-    <link href="https://vjs.zencdn.net/8.23.4/video-js.css" rel="stylesheet" />
-    <script defer src="https://vjs.zencdn.net/8.23.4/video.min.js"></script>
-    <script defer src="https://unpkg.com/@videojs/http-streaming/dist/videojs-http-streaming.min.js"></script>
-    <script defer src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
-
-    <!-- cycler JS script: -->
-    <script defer src="/static/Cycler.js"></script>
-
-    <title>
-        Logan's RPI Webcam Cycler
-    </title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styling.css') }}">
+    <script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
+    <script defer src="{{ url_for('static', filename='Cycler.js') }}"></script>
+    {% if config["DEV_MODE"] %}
+    <script defer src="{{ url_for('static', filename='dev-reload.js') }}"></script>
+    {% endif %}
+    <title>Logan's RPI Webcam Cycler</title>
 </head>
 <body>
     <main>
-        <!-- video block here -->
         <div class="videoMainBlock">
+            <div id="Active_slot" class="PlaybackSlot is-active">
                 <iframe
                     id="iFrameElement"
-                    class="VideoDisplayingItem" 
-                    frameborder="0"
-                    preload="auto"
-                    allowfullscreen webkitallowfullscreen mozallowfullscreen muted autoplay
-                    controls
+                    class="VideoDisplayingItem"
+                    title="Live webcam"
                     allow="autoplay; fullscreen; encrypted-media"
-                    data-setup="{}"
-                    >
+                    allowfullscreen
+                    hidden>
                 </iframe>
-
                 <video
                     id="VideoElement"
-                    class="VideoDisplayingItem" 
-                    frameborder="0"
-                    allowfullscreen webkitallowfullscreen mozallowfullscreen muted autoplay
-                    allow="autoplay; fullscreen; encrypted-media"
+                    class="VideoDisplayingItem"
+                    autoplay
+                    muted
+                    playsinline
                     preload="auto"
-                    >
+                    controls
+                    hidden>
                 </video>
-
-            <!-- this is where the upper title block is going -->
+            </div>
+            <div id="Staging_slot" class="PlaybackSlot is-staging" aria-hidden="true">
+                <iframe
+                    id="Staging_iframe"
+                    class="VideoDisplayingItem"
+                    title="Preloading next webcam"
+                    allow="autoplay; fullscreen; encrypted-media"
+                    allowfullscreen
+                    tabindex="-1"
+                    hidden>
+                </iframe>
+                <video
+                    id="Staging_video"
+                    class="VideoDisplayingItem"
+                    autoplay
+                    muted
+                    playsinline
+                    preload="auto"
+                    tabindex="-1"
+                    hidden>
+                </video>
+            </div>
+            <button
+                id="Previous_camera"
+                class="Camera_navigation Camera_navigation--previous"
+                type="button"
+                aria-label="Previous camera">
+            </button>
+            <button
+                id="Next_camera"
+                class="Camera_navigation Camera_navigation--next"
+                type="button"
+                aria-label="Next camera">
+            </button>
             <div class="MainTitle">
-                <h1><span id = "Webcam_location_description"></span></h1>
-                <h2><span id = "Webcam_local_time_"></span></h2>
+                <h1><span id="Webcam_location_description"></span></h1>
+                <h2><span id="Webcam_local_time_"></span></h2>
+                <p id="Playback_status" role="status" aria-live="polite"></p>
             </div>
         </div>
     </main>
