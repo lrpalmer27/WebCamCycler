@@ -100,19 +100,6 @@ python3 -m venv .venv
 The startup script uses the project path shown above; update `APP_DIR` in
 `rpiStart.sh` if the project is installed elsewhere.
 
-## Rotate Display
-Because of the wiring direction on the pi, I want the screen to be 'upside down'. To flip the display output: 
-```
-sudo nano /boot/config.txt
-```
-comment out this line: 
-```
-# dtoverlay=vc4-kms-vd3
-```
-add this line, to the bottom of the config.txt file, to flip display 180 degrees: 
-```
-lcd_rotate=2
-```
 
 # Hardware
 Computer: Raspberry Pi 3B+ Trixie
