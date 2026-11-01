@@ -1,6 +1,6 @@
 #!/bin/bash
 
-APP_DIR='/home/logan/Desktop/WebCamViewer'
+APP_DIR='/home/logan/Desktop/WebCamCycler'
 LOG_DIR="$APP_DIR/logs"
 LOGFILE="$LOG_DIR/logfile.txt"
 PIDFILE="$LOG_DIR/webcam-cycler.pid"
