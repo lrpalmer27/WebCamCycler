@@ -164,7 +164,7 @@ nohup bash -c '
     fi
     exit "$STATUS"
 ' rpiStart "$LOGFILE" "$CHROMIUM_LOGFILE" "$CHROMIUM_BIN" \
-    --disable-gpu --kiosk --incognito --no-first-run --disable-infobars --password-store="basic"
+    --disable-gpu --kiosk --incognito --no-first-run --disable-infobars --password-store="basic" \
     http://127.0.0.1:5050 </dev/null >/dev/null 2>&1 &
 CHROMIUM_PID=$!
 log "Chromium launch requested (PID $CHROMIUM_PID); checking startup"
