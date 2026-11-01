@@ -30,9 +30,9 @@ fi
 
 log "===== rpiStart.sh starting (directory: $APP_DIR) ====="
 
-# make sure this runs on main display
-export DISPLAY=:0
-log "DISPLAY set to $DISPLAY"
+# retain the display session inherited from the desktop; use :0 as fallback
+export DISPLAY="${DISPLAY:-:0}"
+log "Display environment: DISPLAY=$DISPLAY, WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-not set}, XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-not set}, XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-not set}"
 
 # kill browser
 log "Closing any existing Chromium process"
@@ -129,9 +129,21 @@ fi
 log "Python app process $APP_PID is running"
 
 # open Chromium in kiosk mode to hide browser controls and fill the display
-log "Launching Chromium in kiosk mode"
-chromium --kiosk --incognito --no-first-run --disable-infobars http://localhost:5050 &
-log "Chromium launch requested (PID $!)"
+CHROMIUM_BIN="$(command -v chromium)" || {
+    log "ERROR: chromium executable was not found on PATH"
+    exit 1
+}
+log "Launching Chromium in kiosk mode with $CHROMIUM_BIN"
+nohup "$CHROMIUM_BIN" --kiosk --incognito --no-first-run --disable-infobars \
+    http://localhost:5050 </dev/null >> "$LOGFILE" 2>&1 &
+CHROMIUM_PID=$!
+log "Chromium launch requested (PID $CHROMIUM_PID); checking startup"
+sleep 3
+if kill -0 "$CHROMIUM_PID" 2>/dev/null; then
+    log "Chromium process $CHROMIUM_PID is running"
+else
+    log "ERROR: Chromium process exited during startup; see preceding Chromium output and display environment"
+fi
 
 cleanup () {
 	log "Cleanup started"
