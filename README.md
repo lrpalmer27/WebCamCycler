@@ -78,27 +78,11 @@ Check the browser console and the provider's page if one specific feed remains
 unavailable.
 
 ## How is auto-boot setup?
-Basic instructions from: https://www.youtube.com/watch?v=-L1TetCc-oc
-                        https://fuzzthepiguy.tech/browser-gui/
-
-added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
-
-```
-@lxterminal -e bash /home/logan/Desktop/WebCamCycler/rpiStart.sh &
-```
-
-`rpiStart.sh` activates the project's `.venv`, installs dependencies from
-`PIRequirements.txt` on first launch or when that file changes in a newer Git
-commit, then starts `main.py` and opens the kiosk browser and streaming
-helpers. Create the virtual environment once before enabling auto-boot:
-
-```
-cd /home/logan/Desktop/WebCamCycler
-python3 -m venv .venv
-```
-
 The startup script uses the project path shown above; update `APP_DIR` in
 `rpiStart.sh` if the project is installed elsewhere.
+
+Commits pushed to the `main` branch are automatically deployed to the
+Raspberry Pi.
 
 
 # Hardware
