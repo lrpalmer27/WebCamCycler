@@ -84,7 +84,7 @@ Basic instructions from: https://www.youtube.com/watch?v=-L1TetCc-oc
 added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
 
 ```
-@lxterminal -e bash /home/logan/Desktop/WebCamViewer/rpiStart.sh &
+@lxterminal -e bash /home/logan/Desktop/WebCamCycler/rpiStart.sh &
 ```
 
 `rpiStart.sh` activates the project's `.venv`, installs or updates dependencies
@@ -93,7 +93,7 @@ streaming helpers. Create the virtual environment once before enabling
 auto-boot:
 
 ```
-cd /home/logan/Desktop/WebCamViewer
+cd /home/logan/Desktop/WebCamCycler
 python3 -m venv .venv
 ```
 
