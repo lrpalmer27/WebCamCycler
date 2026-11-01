@@ -128,13 +128,14 @@ if ! kill -0 "$APP_PID" 2>/dev/null; then
 fi
 log "Python app process $APP_PID is running"
 
+# use software rendering because Chromium's GPU process fails on this Pi setup
 # open Chromium in kiosk mode to hide browser controls and fill the display
 CHROMIUM_BIN="$(command -v chromium)" || {
     log "ERROR: chromium executable was not found on PATH"
     exit 1
 }
-log "Launching Chromium in kiosk mode with $CHROMIUM_BIN"
-nohup "$CHROMIUM_BIN" --kiosk --incognito --no-first-run --disable-infobars \
+log "Launching Chromium in kiosk mode with software rendering: $CHROMIUM_BIN"
+nohup "$CHROMIUM_BIN" --disable-gpu --kiosk --incognito --no-first-run --disable-infobars \
     http://localhost:5050 </dev/null >> "$LOGFILE" 2>&1 &
 CHROMIUM_PID=$!
 log "Chromium launch requested (PID $CHROMIUM_PID); checking startup"
