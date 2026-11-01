@@ -47,6 +47,9 @@ be embeddable or available.
   `WebcamURLs_All.csv` were loaded.
 - `http://127.0.0.1:5050/` opens the viewer.
 
+The Flask server listens only on `127.0.0.1`; it is intended for a browser
+running on the same device and is not exposed to other devices on the network.
+
 At server startup, the camera list is shuffled once into a random order. The
 viewer then advances through every camera in that order before repeating it.
 Use the left and right edge click areas (or Left/Right arrow keys) to move

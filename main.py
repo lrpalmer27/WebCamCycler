@@ -291,7 +291,7 @@ if __name__ == "__main__":
     ):
         webbrowser.open("http://localhost:5050")
     app.run(
-        host="127.0.0.1" if app.config["DEV_MODE"] else "0.0.0.0",
+        host="127.0.0.1",
         debug=app.config["DEV_MODE"],
         use_reloader=app.config["DEV_MODE"],
         extra_files=[str(CAMERA_LIST)] if app.config["DEV_MODE"] else None,

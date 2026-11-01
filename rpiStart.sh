@@ -136,7 +136,7 @@ CHROMIUM_BIN="$(command -v chromium)" || {
 }
 log "Launching Chromium in kiosk mode with software rendering: $CHROMIUM_BIN"
 nohup "$CHROMIUM_BIN" --disable-gpu --kiosk --incognito --no-first-run --disable-infobars \
-    http://localhost:5050 </dev/null >> "$LOGFILE" 2>&1 &
+    http://127.0.0.1:5050 </dev/null >> "$LOGFILE" 2>&1 &
 CHROMIUM_PID=$!
 log "Chromium launch requested (PID $CHROMIUM_PID); checking startup"
 sleep 3
