@@ -87,11 +87,18 @@ added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
 @lxterminal -e bash /home/logan/Desktop/WebCamViewer/rpiStart.sh &
 ```
 
-`rpiStart.sh` launches `rpiHealthWatchdog.sh`, which checks the local health
-endpoint and restarts only the Flask process if it stops responding. The old
-six-hour scheduled system reboot has been removed. The Pi startup scripts use
-the paths and virtual-environment location documented in the script; update
-those paths if the project is installed elsewhere.
+`rpiStart.sh` activates the project's `.venv`, installs or updates dependencies
+from `PIRequirements.txt`, starts `main.py`, and opens the kiosk browser and
+streaming helpers. Create the virtual environment once before enabling
+auto-boot:
+
+```
+cd /home/logan/Desktop/WebCamViewer
+python3 -m venv .venv
+```
+
+The startup script uses the project path shown above; update `APP_DIR` in
+`rpiStart.sh` if the project is installed elsewhere.
 
 ## Rotate Display
 Because of the wiring direction on the pi, I want the screen to be 'upside down'. To flip the display output: 
@@ -108,7 +115,7 @@ lcd_rotate=2
 ```
 
 # Hardware
-Computer: Raspberry Pi 3B+ Bullseye
+Computer: Raspberry Pi 3B+ Trixie
 Display: Raspberry Pi 7" touchscreen
 Display mount: Custom bent 16Ga cold-rolled 1008 carbon steel sheet
 
