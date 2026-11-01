@@ -3,6 +3,7 @@
 APP_DIR='/home/logan/Desktop/WebCamCycler'
 LOG_DIR="$APP_DIR/logs"
 LOGFILE="$LOG_DIR/logfile.txt"
+CHROMIUM_LOGFILE="$LOG_DIR/chromium.log"
 PIDFILE="$LOG_DIR/webcam-cycler.pid"
 DEPENDENCY_COMMIT_FILE="$LOG_DIR/dependencies-commit"
 REQUIREMENTS_FILE="$APP_DIR/PIRequirements.txt"
@@ -134,16 +135,46 @@ CHROMIUM_BIN="$(command -v chromium)" || {
     log "ERROR: chromium executable was not found on PATH"
     exit 1
 }
+log "Recording Chromium diagnostics in $CHROMIUM_LOGFILE"
+{
+    printf '\n[%s] ===== Chromium launch diagnostics =====\n' \
+        "$(date '+%Y-%m-%d %H:%M:%S %z')"
+    "$CHROMIUM_BIN" --version
+    if command -v free >/dev/null 2>&1; then
+        free -h
+    fi
+    if command -v df >/dev/null 2>&1; then
+        df -h /dev/shm
+    fi
+} >> "$CHROMIUM_LOGFILE" 2>&1
+
 log "Launching Chromium in kiosk mode with software rendering: $CHROMIUM_BIN"
-nohup "$CHROMIUM_BIN" --disable-gpu --kiosk --incognito --no-first-run --disable-infobars \
-    http://127.0.0.1:5050 </dev/null >> "$LOGFILE" 2>&1 &
+nohup bash -c '
+    LOGFILE="$1"
+    CHROMIUM_LOGFILE="$2"
+    shift 2
+    "$@" --enable-logging=stderr --v=0 >> "$CHROMIUM_LOGFILE" 2>&1
+    STATUS=$?
+    if (( STATUS > 128 )); then
+        printf "[%s] Chromium exited with status %d (signal %d)\n" \
+            "$(date "+%Y-%m-%d %H:%M:%S %z")" "$STATUS" "$((STATUS - 128))" >> "$LOGFILE"
+    else
+        printf "[%s] Chromium exited with status %d\n" \
+            "$(date "+%Y-%m-%d %H:%M:%S %z")" "$STATUS" >> "$LOGFILE"
+    fi
+    exit "$STATUS"
+' rpiStart "$LOGFILE" "$CHROMIUM_LOGFILE" "$CHROMIUM_BIN" \
+    --disable-gpu --kiosk --incognito --no-first-run --disable-infobars \
+    http://127.0.0.1:5050 </dev/null >/dev/null 2>&1 &
 CHROMIUM_PID=$!
 log "Chromium launch requested (PID $CHROMIUM_PID); checking startup"
-sleep 3
+sleep 10
 if kill -0 "$CHROMIUM_PID" 2>/dev/null; then
-    log "Chromium process $CHROMIUM_PID is running"
+    log "Chromium launcher process $CHROMIUM_PID is still running"
 else
-    log "ERROR: Chromium process exited during startup; see preceding Chromium output and display environment"
+    wait "$CHROMIUM_PID"
+    CHROMIUM_STATUS=$?
+    log "ERROR: Chromium launcher exited during startup with status $CHROMIUM_STATUS; see $CHROMIUM_LOGFILE"
 fi
 
 cleanup () {

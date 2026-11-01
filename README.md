@@ -84,6 +84,11 @@ unavailable.
 The startup script uses the project path shown above; update `APP_DIR` in
 `rpiStart.sh` if the project is installed elsewhere.
 
+For Raspberry Pi startup troubleshooting, `logs/logfile.txt` records launcher
+steps and Chromium's exit status. Chromium diagnostics, including its version
+and available memory and `/dev/shm` space at launch, are written to
+`logs/chromium.log`.
+
 Commits pushed to the `main` branch are automatically deployed to the
 Raspberry Pi.
 
