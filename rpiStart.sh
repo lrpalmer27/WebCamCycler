@@ -128,9 +128,9 @@ if ! kill -0 "$APP_PID" 2>/dev/null; then
 fi
 log "Python app process $APP_PID is running"
 
-# open chromium full screen 
-log "Launching Chromium kiosk"
-chromium --start-fullscreen --incognito --app http://localhost:5050 &
+# open Chromium in kiosk mode to hide browser controls and fill the display
+log "Launching Chromium in kiosk mode"
+chromium --kiosk --incognito --no-first-run --disable-infobars http://localhost:5050 &
 log "Chromium launch requested (PID $!)"
 
 cleanup () {
