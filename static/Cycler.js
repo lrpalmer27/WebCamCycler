@@ -12,6 +12,7 @@ let activeLoadId = 0;
 let activeCamera = null;
 let stagedCamera = null;
 let stagedReady = false;
+let stagedLoadAttempted = false;
 let stagedPromise = null;
 let preloadGeneration = 0;
 let failedAutomaticCameraIndex = null;
@@ -49,6 +50,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 scheduleNextCamera("Video failed to load; trying another camera...");
             } else if (slot === stagingSlot) {
                 stagedReady = false;
+                if (slot.finishPending) {
+                    slot.finishPending(false);
+                }
             }
         });
         slot.video.addEventListener("waiting", () => {
@@ -56,18 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 playbackTimeout = window.setTimeout(() => {
                     scheduleNextCamera("Stream stalled; trying another camera...");
                 }, PLAYBACK_TIMEOUT_MS);
-            }
-        });
-        slot.iframe.addEventListener("load", () => {
-            if (slot === stagingSlot && stagedCamera) {
-                stagedReady = true;
-            }
-        });
-        slot.iframe.addEventListener("error", () => {
-            if (slot === activeSlot && activeCamera) {
-                scheduleNextCamera("Camera page failed to load; trying another camera...");
-            } else if (slot === stagingSlot) {
-                stagedReady = false;
             }
         });
     }
@@ -210,47 +202,81 @@ async function advanceCamera(direction) {
     window.clearTimeout(retryTimeout);
     clearPlaybackTimeout();
 
-    let attemptedCamera = null;
     try {
-        const targetIndex = direction === "next"
-            ? activeCamera.NextCameraIndex
-            : activeCamera.PreviousCameraIndex;
-        let nextData;
-        let ready = false;
+        if (direction === "previous") {
+            preloadGeneration += 1;
+            stagedPromise = null;
+            clearSlot(stagingSlot);
+            const previousCamera = await fetchJSON(
+                `/camera/${activeCamera.PreviousCameraIndex}/`
+            );
+            const ready = await prepareSlot(stagingSlot, previousCamera, true);
+            if (!ready) {
+                throw new Error(
+                    `Camera did not become ready: ${previousCamera.webcamLocationDesc}`
+                );
+            }
+            promoteStagedCamera(previousCamera);
+            return;
+        }
 
-        if (direction === "next" && stagedPromise) {
+        if (stagedPromise) {
             await stagedPromise;
         }
-        if (direction === "next" && stagedCamera?.CameraIndex === targetIndex) {
-            nextData = stagedCamera;
-            ready = stagedReady;
-            attemptedCamera = nextData;
-        }
-        if (!nextData) {
-            if (direction !== "next") {
-                preloadGeneration += 1;
-                stagedPromise = null;
-                clearSlot(stagingSlot);
+
+        let targetIndex = activeCamera.NextCameraIndex;
+        let firstFailedCamera = null;
+        for (let attempt = 0; attempt < activeCamera.CameraCount; attempt += 1) {
+            let candidate = null;
+            let ready = false;
+            if (failedAutomaticCameraIndex === targetIndex) {
+                candidate = {
+                    CameraIndex: failedAutomaticCameraIndex,
+                    NextCameraIndex: failedAutomaticNextIndex,
+                    webcamLocationDesc: "previously unavailable camera",
+                };
+            } else if (stagedCamera?.CameraIndex === targetIndex) {
+                candidate = stagedCamera;
+                ready = stagedReady;
+                if (!ready && !stagedLoadAttempted) {
+                    ready = await prepareSlot(stagingSlot, candidate, true);
+                }
+            } else {
+                candidate = await fetchJSON(`/camera/${targetIndex}/`);
+                ready = await prepareSlot(stagingSlot, candidate, true);
             }
-            nextData = await fetchJSON(`/camera/${targetIndex}/`);
-            attemptedCamera = nextData;
-            ready = await prepareSlot(stagingSlot, nextData, true);
-        }
-        if (!ready) {
-            throw new Error(`Camera did not become ready: ${nextData.webcamLocationDesc}`);
+
+            if (ready) {
+                failedAutomaticCameraIndex = null;
+                failedAutomaticNextIndex = null;
+                promoteStagedCamera(candidate);
+                return;
+            }
+
+            if (!firstFailedCamera) {
+                firstFailedCamera = candidate;
+            }
+            console.warn(
+                `Camera was not ready within ${PRELOAD_TIMEOUT_MS}ms; skipping:`,
+                candidate.webcamLocationDesc
+            );
+            targetIndex = candidate.NextCameraIndex;
+            clearSlot(stagingSlot);
         }
 
-        failedAutomaticCameraIndex = null;
-        failedAutomaticNextIndex = null;
-        promoteStagedCamera(nextData);
-    } catch (error) {
-        console.error("Unable to switch cameras:", error);
-        if (attemptedCamera) {
-            failedAutomaticCameraIndex = attemptedCamera.CameraIndex;
-            failedAutomaticNextIndex = attemptedCamera.NextCameraIndex;
+        if (firstFailedCamera) {
+            failedAutomaticCameraIndex = firstFailedCamera.CameraIndex;
+            failedAutomaticNextIndex = firstFailedCamera.NextCameraIndex;
         }
-        showStatus("Next camera is not ready; keeping the current stream.");
-        preloadNextCamera();
+        showStatus("No other streams are ready; retrying shortly...");
+        window.clearTimeout(retryTimeout);
+        retryTimeout = window.setTimeout(ShuffleVideoSource, RETRY_INTERVAL_MS);
+    } catch (error) {
+        console.error("Unable to find a ready camera:", error);
+        clearSlot(stagingSlot);
+        showStatus("Unable to load another stream; retrying shortly...");
+        window.clearTimeout(retryTimeout);
+        retryTimeout = window.setTimeout(ShuffleVideoSource, RETRY_INTERVAL_MS);
     } finally {
         shuffleInProgress = false;
     }
@@ -275,6 +301,9 @@ function iframeIsExplicitlyMuted(url) {
 
 async function prepareSlot(slot, data, isStaging, waitForReady = true) {
     clearSlot(slot);
+    if (isStaging) {
+        stagedLoadAttempted = true;
+    }
     const loadId = ++activeLoadId;
     slot.loadId = loadId;
     let resolveReady;
@@ -299,16 +328,26 @@ async function prepareSlot(slot, data, isStaging, waitForReady = true) {
     slot.finishPending = finish;
     timeout = window.setTimeout(() => finish(false), PRELOAD_TIMEOUT_MS);
     const ready = () => {
+        if (slot.loadId !== loadId) {
+            return;
+        }
         window.clearTimeout(timeout);
         finish(true);
     };
 
     if (data.VidSource === "m3u8") {
         slot.video.hidden = false;
-        slot.video.addEventListener("playing", ready, { once: true });
+        slot.video.addEventListener("playing", () => {
+            if (slot.loadId === loadId) {
+                ready();
+            }
+        }, { once: true });
 
         if (window.Hls && Hls.isSupported()) {
-            slot.hls = new Hls({ maxBufferLength: 4, maxMaxBufferLength: 6 });
+            slot.hls = new Hls({
+                maxBufferLength: isStaging ? 2 : 4,
+                maxMaxBufferLength: isStaging ? 3 : 6,
+            });
             if (isStaging) {
                 stagedHls = slot.hls;
             } else {
@@ -362,7 +401,20 @@ async function prepareSlot(slot, data, isStaging, waitForReady = true) {
             stagedReady = false;
             stagedCamera = data;
         }
-        slot.iframe.addEventListener("load", ready, { once: true });
+        slot.iframe.addEventListener("load", () => {
+            ready();
+        }, { once: true });
+        slot.iframe.addEventListener("error", () => {
+            if (slot.loadId !== loadId) {
+                return;
+            }
+            if (slot === activeSlot && activeCamera) {
+                scheduleNextCamera(
+                    "Camera page failed to load; trying another camera..."
+                );
+            }
+            finish(false);
+        }, { once: true });
         slot.iframe.src = data.ShuffledURL;
     }
 
@@ -403,6 +455,7 @@ function clearSlot(slot) {
         stagedHls = null;
         stagedCamera = null;
         stagedReady = false;
+        stagedLoadAttempted = false;
     }
 }
 
@@ -433,13 +486,20 @@ function preloadNextCamera() {
             }
             stagedReady = ready;
             if (!ready) {
-                showStatus("Preloading next stream failed; it will load when selected.");
+                failedAutomaticCameraIndex = data.CameraIndex;
+                failedAutomaticNextIndex = data.NextCameraIndex;
+                clearSlot(stagingSlot);
             }
             return ready;
         } catch (error) {
             console.warn("Unable to preload next camera:", error);
             if (generation === preloadGeneration) {
                 stagedReady = false;
+                if (stagedCamera) {
+                    failedAutomaticCameraIndex = stagedCamera.CameraIndex;
+                    failedAutomaticNextIndex = stagedCamera.NextCameraIndex;
+                }
+                clearSlot(stagingSlot);
             }
             return false;
         } finally {
