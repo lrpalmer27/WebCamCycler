@@ -114,7 +114,7 @@ log "Dependency check recorded for commit $CURRENT_COMMIT"
 
 # run webcam cycler
 log "Starting Python app: $APP_DIR/main.py"
-python "$APP_DIR/main.py" >> "$LOGFILE" 2>&1 &
+nohup python "$APP_DIR/main.py" </dev/null >> "$LOGFILE" 2>&1 &
 APP_PID=$!
 if ! printf '%s\n' "$APP_PID" > "$PIDFILE"; then
     log "ERROR: unable to write app PID file"
@@ -162,10 +162,4 @@ cleanup () {
 trap cleanup SIGINT
 trap cleanup SIGTSTP
 
-log "Startup procedure complete; waiting for terminal input"
-if read HoldOpen; then
-    log "Terminal input received; exiting"
-else
-    log "Terminal input closed; exiting"
-fi
-log "rpiStart.sh exiting"
+log "Startup procedure complete; app remains detached in the background (PID $APP_PID)"
