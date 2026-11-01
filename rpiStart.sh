@@ -7,6 +7,7 @@ CHROMIUM_LOGFILE="$LOG_DIR/chromium.log"
 PIDFILE="$LOG_DIR/webcam-cycler.pid"
 DEPENDENCY_COMMIT_FILE="$LOG_DIR/dependencies-commit"
 REQUIREMENTS_FILE="$APP_DIR/PIRequirements.txt"
+CHROMIUM_STARTUP_DELAY_SECONDS=20
 
 log() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" >> "$LOGFILE"
@@ -128,6 +129,10 @@ if ! kill -0 "$APP_PID" 2>/dev/null; then
     exit 1
 fi
 log "Python app process $APP_PID is running"
+
+# give the Raspberry Pi desktop and display session time to finish starting
+log "Waiting ${CHROMIUM_STARTUP_DELAY_SECONDS}s for the Raspberry Pi display to settle before starting Chromium"
+sleep "$CHROMIUM_STARTUP_DELAY_SECONDS"
 
 # use software rendering because Chromium's GPU process fails on this Pi setup
 # open Chromium in kiosk mode to hide browser controls and fill the display
