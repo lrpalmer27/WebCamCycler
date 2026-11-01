@@ -87,10 +87,10 @@ added a startup line to /etc/xdg/lxsession/LXDE-pi/autostart
 @lxterminal -e bash /home/logan/Desktop/WebCamCycler/rpiStart.sh &
 ```
 
-`rpiStart.sh` activates the project's `.venv`, installs or updates dependencies
-from `PIRequirements.txt`, starts `main.py`, and opens the kiosk browser and
-streaming helpers. Create the virtual environment once before enabling
-auto-boot:
+`rpiStart.sh` activates the project's `.venv`, installs dependencies from
+`PIRequirements.txt` on first launch or when that file changes in a newer Git
+commit, then starts `main.py` and opens the kiosk browser and streaming
+helpers. Create the virtual environment once before enabling auto-boot:
 
 ```
 cd /home/logan/Desktop/WebCamCycler

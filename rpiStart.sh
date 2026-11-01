@@ -4,6 +4,8 @@ APP_DIR='/home/logan/Desktop/WebCamCycler'
 LOG_DIR="$APP_DIR/logs"
 LOGFILE="$LOG_DIR/logfile.txt"
 PIDFILE="$LOG_DIR/webcam-cycler.pid"
+DEPENDENCY_COMMIT_FILE="$LOG_DIR/dependencies-commit"
+REQUIREMENTS_FILE="$APP_DIR/PIRequirements.txt"
 
 cd "$APP_DIR" || exit 1
 mkdir -p "$LOG_DIR"
@@ -32,8 +34,40 @@ fi
 # start venv
 source "$APP_DIR/.venv/bin/activate" || exit 1
 
-# install/update app dependencies after pulling changes
-python -m pip install -r "$APP_DIR/PIRequirements.txt" >> "$LOGFILE" 2>&1 || exit 1
+# install dependencies only when the requirements changed since the last check
+CURRENT_COMMIT="$(git -C "$APP_DIR" rev-parse HEAD 2>> "$LOGFILE")" || {
+    echo "Unable to determine current Git commit; cannot check dependencies" >> "$LOGFILE"
+    exit 1
+}
+LAST_CHECKED_COMMIT=''
+if [[ -r "$DEPENDENCY_COMMIT_FILE" ]]; then
+    LAST_CHECKED_COMMIT="$(cat "$DEPENDENCY_COMMIT_FILE")"
+fi
+
+INSTALL_REQUIREMENTS=1
+if [[ -n "$LAST_CHECKED_COMMIT" ]]; then
+    if git -C "$APP_DIR" cat-file -e "$LAST_CHECKED_COMMIT^{commit}" 2>> "$LOGFILE"; then
+        git -C "$APP_DIR" diff --quiet "$LAST_CHECKED_COMMIT" "$CURRENT_COMMIT" -- PIRequirements.txt
+        DIFF_STATUS=$?
+        if [[ "$DIFF_STATUS" -eq 0 ]]; then
+            INSTALL_REQUIREMENTS=0
+        elif [[ "$DIFF_STATUS" -ne 1 ]]; then
+            echo "Unable to compare dependency requirements between commits" >> "$LOGFILE"
+            exit 1
+        fi
+    fi
+fi
+
+if [[ "$INSTALL_REQUIREMENTS" -eq 1 ]]; then
+    echo "Installing Python dependencies for commit $CURRENT_COMMIT" >> "$LOGFILE"
+    python -m pip install -r "$REQUIREMENTS_FILE" >> "$LOGFILE" 2>&1 || exit 1
+else
+    echo "Python requirements unchanged; skipping pip install" >> "$LOGFILE"
+fi
+printf '%s\n' "$CURRENT_COMMIT" > "$DEPENDENCY_COMMIT_FILE" || {
+    echo "Unable to save dependency check commit" >> "$LOGFILE"
+    exit 1
+}
 
 # run webcam cycler
 python "$APP_DIR/main.py" >> "$LOGFILE" 2>&1 &
