@@ -53,6 +53,8 @@ class CameraRoutesTests(unittest.TestCase):
     def setUp(self):
         self.client = main.app.test_client()
         main.app.config["CAMERA_INDEX"] = None
+        main.app.config["CAMERA_POSITION"] = None
+        main.app.config["DEV_MODE"] = False
 
     def test_health_and_camera_list_report_all_configured_cameras(self):
         health = self.client.get("/health/")
@@ -78,6 +80,7 @@ class CameraRoutesTests(unittest.TestCase):
         data = response.json
 
         self.assertEqual(response.status_code, 200)
+        self.assertEqual(data["CameraIndex"], main.app.config["CAMERA_ORDER"][0])
         self.assertIn(
             data["ShuffledURL"],
             {camera["URL"] for camera in main.app.config["CAMERAS"]},
@@ -88,40 +91,77 @@ class CameraRoutesTests(unittest.TestCase):
         )
         self.assertTrue(data["webcamLocationDesc"])
         self.assertTrue(data["Webcam_local_time"])
+        self.assertEqual(
+            data["NextCameraIndex"], main.app.config["CAMERA_ORDER"][1]
+        )
 
-    def test_previous_and_next_navigate_cameras_in_csv_order(self):
+    def test_health_check_does_not_consume_first_camera_in_random_order(self):
+        order = main.app.config["CAMERA_ORDER"]
+
+        self.client.get("/health/")
+        first_camera = self.client.get("/shuffle/").json
+
+        self.assertEqual(first_camera["CameraIndex"], order[0])
+
+    def test_shuffle_cycles_through_one_fixed_random_order(self):
+        order = main.app.config["CAMERA_ORDER"].copy()
+
+        shuffled = [
+            self.client.get("/shuffle/").json["CameraIndex"]
+            for _ in range(len(order) + 1)
+        ]
+
+        self.assertEqual(shuffled[:-1], order)
+        self.assertEqual(shuffled[-1], order[0])
+        self.assertEqual(main.app.config["CAMERA_ORDER"], order)
+
+    def test_random_order_contains_each_camera_once(self):
+        order = main.app.config["CAMERA_ORDER"]
+
+        self.assertEqual(len(order), len(main.app.config["CAMERAS"]))
+        self.assertEqual(set(order), set(range(len(main.app.config["CAMERAS"]))))
+
+    def test_previous_and_next_navigate_cameras_in_randomized_order(self):
         cameras = main.app.config["CAMERAS"]
-        main.app.config["CAMERA_INDEX"] = 0
+        order = main.app.config["CAMERA_ORDER"]
+        main.app.config["CAMERA_INDEX"] = order[0]
+        main.app.config["CAMERA_POSITION"] = 0
 
         next_camera = self.client.get("/navigate/next/").json
         previous_camera = self.client.get("/navigate/previous/").json
 
-        self.assertEqual(next_camera["CameraIndex"], 1)
-        self.assertEqual(next_camera["webcamLocationDesc"], cameras[1]["DESCRIPTION"])
-        self.assertEqual(previous_camera["CameraIndex"], 0)
+        self.assertEqual(next_camera["CameraIndex"], order[1])
         self.assertEqual(
-            previous_camera["webcamLocationDesc"], cameras[0]["DESCRIPTION"]
+            next_camera["webcamLocationDesc"], cameras[order[1]]["DESCRIPTION"]
+        )
+        self.assertEqual(previous_camera["CameraIndex"], order[0])
+        self.assertEqual(
+            previous_camera["webcamLocationDesc"], cameras[order[0]]["DESCRIPTION"]
         )
 
     def test_camera_navigation_wraps_at_both_ends(self):
-        cameras = main.app.config["CAMERAS"]
-        main.app.config["CAMERA_INDEX"] = len(cameras) - 1
+        order = main.app.config["CAMERA_ORDER"]
+        main.app.config["CAMERA_INDEX"] = order[-1]
+        main.app.config["CAMERA_POSITION"] = len(order) - 1
 
         next_camera = self.client.get("/navigate/next/").json
         previous_camera = self.client.get("/navigate/previous/").json
 
-        self.assertEqual(next_camera["CameraIndex"], 0)
+        self.assertEqual(next_camera["CameraIndex"], order[0])
         self.assertEqual(
-            previous_camera["CameraIndex"], len(cameras) - 1
+            previous_camera["CameraIndex"], order[-1]
         )
 
     def test_camera_navigation_uses_the_calling_viewer_index(self):
-        main.app.config["CAMERA_INDEX"] = len(main.app.config["CAMERAS"]) - 1
+        order = main.app.config["CAMERA_ORDER"]
+        expected_index = order[(order.index(0) + 1) % len(order)]
+        main.app.config["CAMERA_INDEX"] = order[-1]
+        main.app.config["CAMERA_POSITION"] = len(order) - 1
 
         response = self.client.get("/navigate/next/?index=0")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json["CameraIndex"], 1)
+        self.assertEqual(response.json["CameraIndex"], expected_index)
 
     def test_camera_details_endpoint_returns_requested_camera_without_changing_state(self):
         main.app.config["CAMERA_INDEX"] = 5
@@ -166,6 +206,17 @@ class CameraRoutesTests(unittest.TestCase):
         self.assertIn('id="Previous_camera"', page)
         self.assertIn('id="Next_camera"', page)
         self.assertIn("hls.js@1.5.17", page)
+
+    def test_development_reload_is_available_only_when_enabled(self):
+        self.assertEqual(self.client.get("/dev/revision/").status_code, 404)
+
+        main.app.config["DEV_MODE"] = True
+        revision = self.client.get("/dev/revision/")
+        page = self.client.get("/").get_data(as_text=True)
+
+        self.assertEqual(revision.status_code, 200)
+        self.assertGreaterEqual(len(revision.json["revision"]), 5)
+        self.assertIn("dev-reload.js", page)
 
     def test_live_time_uses_current_camera_timezone(self):
         response = self.client.get("/live/")

@@ -6,6 +6,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styling.css') }}">
     <script defer src="https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js"></script>
     <script defer src="{{ url_for('static', filename='Cycler.js') }}"></script>
+    {% if config["DEV_MODE"] %}
+    <script defer src="{{ url_for('static', filename='dev-reload.js') }}"></script>
+    {% endif %}
     <title>Logan's RPI Webcam Cycler</title>
 </head>
 <body>

@@ -17,8 +17,21 @@ from flask import Flask, jsonify, render_template, request
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.config["JSON_SORT_KEYS"] = False
+app.config["DEV_MODE"] = os.environ.get("WEBCAM_CYCLER_DEV", "").lower() in {
+    "1",
+    "true",
+    "yes",
+}
 
 CAMERA_LIST = Path(__file__).resolve().with_name("WebcamURLs_All.csv")
+DEV_WATCH_FILES = (
+    Path(__file__).resolve(),
+    CAMERA_LIST,
+    Path(app.root_path) / "templates" / "overlay.html",
+    Path(app.root_path) / "static" / "Cycler.js",
+    Path(app.root_path) / "static" / "styling.css",
+    Path(app.root_path) / "static" / "dev-reload.js",
+)
 REQUIRED_COLUMNS = ("DESCRIPTION", "URL", "PYTZ TIMEZONE", "SOURCE")
 SUPPORTED_SOURCES = {"Youtube", "NTV", "m3u8", "IPCam", "Earthcam"}
 logger = logging.getLogger(__name__)
@@ -75,6 +88,9 @@ def load_cameras(path=CAMERA_LIST):
 
 
 app.config["CAMERAS"] = load_cameras()
+app.config["CAMERA_ORDER"] = list(range(len(app.config["CAMERAS"])))
+random.shuffle(app.config["CAMERA_ORDER"])
+app.config["CAMERA_POSITION"] = None
 app.config["CAMERA_INDEX"] = None
 
 
@@ -83,8 +99,7 @@ def current_camera():
     with camera_lock:
         index = app.config["CAMERA_INDEX"]
         if index is None:
-            index = random.randrange(len(cameras))
-            app.config["CAMERA_INDEX"] = index
+            index = app.config["CAMERA_ORDER"][0]
         return index, cameras[index]
 
 
@@ -98,6 +113,18 @@ def render_html():
     return render_template("overlay.html")
 
 
+@app.route("/dev/revision/")
+def dev_revision():
+    if not app.config["DEV_MODE"]:
+        return jsonify({"error": "Development reload is disabled"}), 404
+
+    revision = []
+    for path in DEV_WATCH_FILES:
+        file_stat = path.stat()
+        revision.append((path.name, file_stat.st_mtime_ns, file_stat.st_size))
+    return jsonify({"revision": revision})
+
+
 @app.route("/health/")
 def health():
     index, camera = current_camera()
@@ -107,6 +134,7 @@ def health():
             "camera_count": len(app.config["CAMERAS"]),
             "current_camera": camera["DESCRIPTION"],
             "current_camera_index": index,
+            "development_mode": app.config["DEV_MODE"],
         }
     )
 
@@ -141,24 +169,23 @@ def update_time_loop():
 
 @app.route("/shuffle/")
 def shuffle_webcam_locations():
-    cameras = app.config["CAMERAS"]
+    order = app.config["CAMERA_ORDER"]
     with camera_lock:
-        current_index = app.config["CAMERA_INDEX"]
-        if current_index is None:
-            new_index = random.randrange(len(cameras))
-        elif len(cameras) == 1:
-            new_index = current_index
-        else:
-            new_index = random.choice(
-                [index for index in range(len(cameras)) if index != current_index]
-            )
+        current_position = app.config["CAMERA_POSITION"]
+        new_position = 0 if current_position is None else (
+            current_position + 1
+        ) % len(order)
+        new_index = order[new_position]
+        app.config["CAMERA_POSITION"] = new_position
         app.config["CAMERA_INDEX"] = new_index
-        camera = cameras[new_index]
+        camera = app.config["CAMERAS"][new_index]
 
     return jsonify(camera_response(new_index, camera))
 
 
 def camera_response(index, camera):
+    order = app.config["CAMERA_ORDER"]
+    position = order.index(index)
     return {
         "Webcam_local_time": camera_local_time(camera),
         "webcamLocationDesc": camera["DESCRIPTION"],
@@ -166,6 +193,8 @@ def camera_response(index, camera):
         "VidSource": camera["SOURCE"],
         "CameraIndex": index,
         "CameraCount": len(app.config["CAMERAS"]),
+        "NextCameraIndex": order[(position + 1) % len(order)],
+        "PreviousCameraIndex": order[(position - 1) % len(order)],
     }
 
 
@@ -183,6 +212,7 @@ def navigate_camera(direction):
         return jsonify({"error": "Direction must be 'next' or 'previous'"}), 400
 
     cameras = app.config["CAMERAS"]
+    order = app.config["CAMERA_ORDER"]
     requested_index = request.args.get("index")
     if requested_index is not None:
         try:
@@ -194,11 +224,18 @@ def navigate_camera(direction):
 
     with camera_lock:
         if requested_index is None:
-            current_index = app.config["CAMERA_INDEX"]
-        if current_index is None:
-            current_index = random.randrange(len(cameras))
+            current_position = app.config["CAMERA_POSITION"]
+            if current_position is None:
+                current_position = 0
+                current_index = order[current_position]
+            else:
+                current_index = app.config["CAMERA_INDEX"]
+        else:
+            current_position = order.index(current_index)
         offset = 1 if direction == "next" else -1
-        new_index = (current_index + offset) % len(cameras)
+        new_position = (current_position + offset) % len(order)
+        new_index = order[new_position]
+        app.config["CAMERA_POSITION"] = new_position
         app.config["CAMERA_INDEX"] = new_index
         camera = cameras[new_index]
 
@@ -253,4 +290,11 @@ if __name__ == "__main__":
         and os.environ.get("WEBCAM_CYCLER_OPEN_BROWSER", "1") != "0"
     ):
         webbrowser.open("http://localhost:5050")
-    app.run(host="0.0.0.0", debug=False, port=5050, threaded=True)
+    app.run(
+        host="127.0.0.1" if app.config["DEV_MODE"] else "0.0.0.0",
+        debug=app.config["DEV_MODE"],
+        use_reloader=app.config["DEV_MODE"],
+        extra_files=[str(CAMERA_LIST)] if app.config["DEV_MODE"] else None,
+        port=int(os.environ.get("WEBCAM_CYCLER_PORT", "5050")),
+        threaded=True,
+    )

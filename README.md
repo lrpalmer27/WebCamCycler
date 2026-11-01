@@ -24,6 +24,14 @@ stop it. If the server is already responding on port `5050`, the command reuses
 it. You can also run `python main.py` directly; on Windows that opens the
 viewer in your default browser.
 
+The local launcher enables development reload: saving Python files or the
+camera CSV restarts the Flask development server automatically, and saving the
+viewer template, JavaScript, or CSS refreshes the browser page. Keep the viewer
+open while editing; changes normally appear within a second or two. The first
+time you switch from an already-running non-development server, close its
+server window once and run `run_local.bat` again. Raspberry Pi startup remains
+in production mode with development reload disabled.
+
 This local setup runs the same Flask app, camera list, and viewer as the Pi, but
 does not launch the Pi startup scripts, kiosk mode, scheduled services, or
 hardware-specific mouse automation. Camera video is loaded directly from its
@@ -39,15 +47,20 @@ be embeddable or available.
   `WebcamURLs_All.csv` were loaded.
 - `http://127.0.0.1:5050/` opens the viewer.
 
-Use the left and right edge buttons (or Left/Right arrow keys) to step backward
-or forward through the camera list in CSV order. Navigation wraps at both ends.
-The normal timed camera shuffle continues to work as before.
+At server startup, the camera list is shuffled once into a random order. The
+viewer then advances through every camera in that order before repeating it.
+Use the left and right edge click areas (or Left/Right arrow keys) to move
+backward or forward within that same order; navigation wraps at both ends.
+Restarting the server creates a new random order.
 
-The viewer also loads the next camera in a hidden, muted player while the
-current stream is showing, then crossfades when it is ready. HLS feeds can be
-buffered before the switch; embedded feeds are loaded in advance, though their
-providers do not always expose when playback is actually ready. Preloading uses
-extra bandwidth and may not avoid a delay for a slow or unavailable feed.
+For timed automatic switches, the viewer loads the next camera in a hidden,
+muted player while the current stream is showing, then crossfades when it is
+ready. HLS feeds can be buffered before the switch; embedded feeds are loaded
+in advance, though their providers do not always expose when playback is
+actually ready. Manual side-clicks do not wait for preloading: they immediately
+select and display the chosen stream. If an automatic preload fails, the next
+manual forward click skips that unavailable camera. Preloading uses extra
+bandwidth and may not avoid a delay for a slow or unavailable feed.
 
 The camera list is validated at startup. Missing columns, blank values,
 unsupported playback types, invalid URLs, and unknown time zones are reported
@@ -105,9 +118,6 @@ The mounting method uses 4x M3x0.5x8mm phillips button head bolts, as shown, the
 
 <img height="350" src="Pictures/IMG_6302.JPG"/>
 
-
-# TODO List: 
-    - Add touchscreen buttons to go forward and backwards in recent videos, incase you want to watch the previous video again..?
 
 ## Tests
 

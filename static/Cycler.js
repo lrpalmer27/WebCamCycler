@@ -14,6 +14,8 @@ let stagedCamera = null;
 let stagedReady = false;
 let stagedPromise = null;
 let preloadGeneration = 0;
+let failedAutomaticCameraIndex = null;
+let failedAutomaticNextIndex = null;
 let activeSlot;
 let stagingSlot;
 
@@ -159,7 +161,45 @@ async function NavigateVideo(direction) {
     if (direction !== "next" && direction !== "previous") {
         return;
     }
-    await advanceCamera(direction);
+    if (shuffleInProgress || !activeCamera) {
+        return;
+    }
+
+    shuffleInProgress = true;
+    window.clearTimeout(retryTimeout);
+    clearPlaybackTimeout();
+    preloadGeneration += 1;
+    stagedPromise = null;
+    clearSlot(stagingSlot);
+
+    try {
+        let targetIndex = direction === "next"
+            ? activeCamera.NextCameraIndex
+            : activeCamera.PreviousCameraIndex;
+        if (
+            direction === "next" &&
+            targetIndex === failedAutomaticCameraIndex
+        ) {
+            targetIndex = failedAutomaticNextIndex;
+        }
+
+        const data = await fetchJSON(`/camera/${targetIndex}/`);
+        failedAutomaticCameraIndex = null;
+        failedAutomaticNextIndex = null;
+        activeCamera = data;
+        updateCameraLabels(data);
+
+        const started = await prepareSlot(activeSlot, data, false, false);
+        if (!started) {
+            showStatus("Camera could not be started.");
+        }
+    } catch (error) {
+        console.error("Unable to select camera:", error);
+        showStatus("Unable to select camera; try again.");
+    } finally {
+        shuffleInProgress = false;
+        preloadNextCamera();
+    }
 }
 
 async function advanceCamera(direction) {
@@ -170,10 +210,11 @@ async function advanceCamera(direction) {
     window.clearTimeout(retryTimeout);
     clearPlaybackTimeout();
 
+    let attemptedCamera = null;
     try {
-        const offset = direction === "next" ? 1 : -1;
-        const cameraCount = activeCamera.CameraCount;
-        const targetIndex = (activeCamera.CameraIndex + offset + cameraCount) % cameraCount;
+        const targetIndex = direction === "next"
+            ? activeCamera.NextCameraIndex
+            : activeCamera.PreviousCameraIndex;
         let nextData;
         let ready = false;
 
@@ -183,23 +224,31 @@ async function advanceCamera(direction) {
         if (direction === "next" && stagedCamera?.CameraIndex === targetIndex) {
             nextData = stagedCamera;
             ready = stagedReady;
+            attemptedCamera = nextData;
         }
-        if (!nextData || !ready) {
+        if (!nextData) {
             if (direction !== "next") {
                 preloadGeneration += 1;
                 stagedPromise = null;
                 clearSlot(stagingSlot);
             }
             nextData = await fetchJSON(`/camera/${targetIndex}/`);
+            attemptedCamera = nextData;
             ready = await prepareSlot(stagingSlot, nextData, true);
         }
         if (!ready) {
             throw new Error(`Camera did not become ready: ${nextData.webcamLocationDesc}`);
         }
 
+        failedAutomaticCameraIndex = null;
+        failedAutomaticNextIndex = null;
         promoteStagedCamera(nextData);
     } catch (error) {
         console.error("Unable to switch cameras:", error);
+        if (attemptedCamera) {
+            failedAutomaticCameraIndex = attemptedCamera.CameraIndex;
+            failedAutomaticNextIndex = attemptedCamera.NextCameraIndex;
+        }
         showStatus("Next camera is not ready; keeping the current stream.");
         preloadNextCamera();
     } finally {
@@ -224,7 +273,7 @@ function iframeIsExplicitlyMuted(url) {
     }
 }
 
-async function prepareSlot(slot, data, isStaging) {
+async function prepareSlot(slot, data, isStaging, waitForReady = true) {
     clearSlot(slot);
     const loadId = ++activeLoadId;
     slot.loadId = loadId;
@@ -233,14 +282,22 @@ async function prepareSlot(slot, data, isStaging) {
         resolveReady = resolve;
     });
     let settled = false;
+    let readyResult = null;
+    let timeout;
     const finish = (ready) => {
-        if (settled || slot.loadId !== loadId) {
+        if (settled) {
             return;
         }
         settled = true;
+        readyResult = ready;
+        window.clearTimeout(timeout);
+        if (slot.finishPending === finish) {
+            slot.finishPending = null;
+        }
         resolveReady(ready);
     };
-    const timeout = window.setTimeout(() => finish(false), PRELOAD_TIMEOUT_MS);
+    slot.finishPending = finish;
+    timeout = window.setTimeout(() => finish(false), PRELOAD_TIMEOUT_MS);
     const ready = () => {
         window.clearTimeout(timeout);
         finish(true);
@@ -312,12 +369,18 @@ async function prepareSlot(slot, data, isStaging) {
     if (isStaging) {
         stagedCamera = data;
     }
+    if (!waitForReady) {
+        return settled ? readyResult : true;
+    }
     const isReady = await readyPromise;
     window.clearTimeout(timeout);
     return isReady;
 }
 
 function clearSlot(slot) {
+    if (slot.finishPending) {
+        slot.finishPending(false);
+    }
     slot.loadId = ++activeLoadId;
     slot.retried = false;
     if (slot.hls) {
@@ -347,13 +410,12 @@ function preloadNextCamera() {
     if (!activeCamera || shuffleInProgress || stagedPromise) {
         return;
     }
-    const nextIndex = (activeCamera.CameraIndex + 1) % activeCamera.CameraCount;
+    const nextIndex = activeCamera.NextCameraIndex;
     const generation = ++preloadGeneration;
     stagedPromise = (async () => {
         try {
             const data = await fetchJSON(`/camera/${nextIndex}/`);
-            const expectedIndex =
-                activeCamera && (activeCamera.CameraIndex + 1) % activeCamera.CameraCount;
+            const expectedIndex = activeCamera && activeCamera.NextCameraIndex;
             if (generation !== preloadGeneration || nextIndex !== expectedIndex) {
                 return false;
             }
@@ -366,6 +428,9 @@ function preloadNextCamera() {
                 return false;
             }
             const ready = await prepareSlot(stagingSlot, data, true);
+            if (generation !== preloadGeneration) {
+                return false;
+            }
             stagedReady = ready;
             if (!ready) {
                 showStatus("Preloading next stream failed; it will load when selected.");
@@ -373,7 +438,9 @@ function preloadNextCamera() {
             return ready;
         } catch (error) {
             console.warn("Unable to preload next camera:", error);
-            stagedReady = false;
+            if (generation === preloadGeneration) {
+                stagedReady = false;
+            }
             return false;
         } finally {
             if (generation === preloadGeneration) {
