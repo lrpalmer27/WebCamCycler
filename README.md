@@ -56,17 +56,13 @@ Use the left and right edge click areas (or Left/Right arrow keys) to move
 backward or forward within that same order; navigation wraps at both ends.
 Restarting the server creates a new random order.
 
-For timed automatic switches, the viewer loads at most one next camera in a
-hidden, muted player while the current stream is showing, then crossfades when
-it is ready. A timed-out preload is stopped before another candidate is tried;
-staging HLS buffers are kept smaller to limit memory use. Each automatic
-candidate has up to 12 seconds to become ready; if it doesn't, the viewer skips
-it and tries the next camera in the randomized order. Embedded feeds are loaded
-in advance, though their providers do not always expose when playback is
-actually ready. Manual side-clicks do not wait for preloading: they immediately
-select and display the chosen stream. If every feed is unavailable, the current
-display is kept and the viewer retries shortly. Preloading uses extra bandwidth
-and may not avoid a delay for a slow or unavailable feed.
+The viewer uses a single player and does not preload the next camera. When a
+timed switch starts, each candidate replaces the current stream and gets up to
+12 seconds to become ready; if it doesn't, the viewer tries the next camera in
+the randomized order. This avoids keeping an additional webcam player and its
+buffers in memory, at the cost of a visible loading gap during switches.
+Manual side-clicks immediately select the chosen stream. If every feed is
+unavailable, the viewer retries shortly.
 
 The camera list is validated at startup. Missing columns, blank values,
 unsupported playback types, invalid URLs, and unknown time zones are reported

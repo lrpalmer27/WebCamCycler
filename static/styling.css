@@ -59,12 +59,6 @@
     opacity: 1;
 }
 
-.PlaybackSlot.is-staging{
-    z-index: 0;
-    opacity: 0;
-    pointer-events: none;
-}
-
 .VideoDisplayingItem{
     position: absolute;
     inset: 0;
