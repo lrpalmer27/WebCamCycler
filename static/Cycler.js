@@ -16,6 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
         video: document.getElementById("VideoElement"),
         hls: null,
         loadId: 0,
+        loadListeners: [],
     };
 
     activeSlot.video.muted = true;
@@ -230,6 +231,7 @@ async function prepareSlot(slot, data, waitForReady = true) {
         settled = true;
         readyResult = ready;
         window.clearTimeout(timeout);
+        clearSlotLoadListeners(slot);
         if (slot.finishPending === finish) {
             slot.finishPending = null;
         }
@@ -237,6 +239,10 @@ async function prepareSlot(slot, data, waitForReady = true) {
     };
     slot.finishPending = finish;
     timeout = window.setTimeout(() => finish(false), CAMERA_LOAD_TIMEOUT_MS);
+    const addLoadListener = (target, eventName, handler) => {
+        target.addEventListener(eventName, handler);
+        slot.loadListeners.push({ target, eventName, handler });
+    };
     const ready = () => {
         if (slot.loadId !== loadId) {
             return;
@@ -247,11 +253,11 @@ async function prepareSlot(slot, data, waitForReady = true) {
 
     if (data.VidSource === "m3u8") {
         slot.video.hidden = false;
-        slot.video.addEventListener("playing", () => {
+        addLoadListener(slot.video, "playing", () => {
             if (slot.loadId === loadId) {
                 ready();
             }
-        }, { once: true });
+        });
 
         if (window.Hls && Hls.isSupported()) {
             slot.hls = new Hls({
@@ -303,10 +309,10 @@ async function prepareSlot(slot, data, waitForReady = true) {
         slot.iframe.allow = iframeIsExplicitlyMuted(data.ShuffledURL)
             ? "camera 'none'; microphone 'none'; autoplay; fullscreen; encrypted-media"
             : "camera 'none'; microphone 'none'; fullscreen; encrypted-media";
-        slot.iframe.addEventListener("load", () => {
+        addLoadListener(slot.iframe, "load", () => {
             ready();
-        }, { once: true });
-        slot.iframe.addEventListener("error", () => {
+        });
+        addLoadListener(slot.iframe, "error", () => {
             if (slot.loadId !== loadId) {
                 return;
             }
@@ -316,7 +322,7 @@ async function prepareSlot(slot, data, waitForReady = true) {
                 );
             }
             finish(false);
-        }, { once: true });
+        });
         slot.iframe.src = data.ShuffledURL;
     }
 
@@ -332,8 +338,12 @@ function clearSlot(slot) {
     if (slot.finishPending) {
         slot.finishPending(false);
     }
+    clearSlotLoadListeners(slot);
     slot.loadId = ++activeLoadId;
     slot.retried = false;
+    if (slot === activeSlot) {
+        clearPlaybackTimeout();
+    }
     if (slot.hls) {
         slot.hls.destroy();
         slot.hls = null;
@@ -346,8 +356,15 @@ function clearSlot(slot) {
     }
     if (slot.iframe) {
         slot.iframe.hidden = true;
-        slot.iframe.removeAttribute("src");
+        slot.iframe.src = "about:blank";
     }
+}
+
+function clearSlotLoadListeners(slot) {
+    for (const { target, eventName, handler } of slot.loadListeners) {
+        target.removeEventListener(eventName, handler);
+    }
+    slot.loadListeners = [];
 }
 
 document.addEventListener("DOMContentLoaded", () => {

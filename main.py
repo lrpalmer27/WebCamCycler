@@ -1,8 +1,11 @@
+import atexit
 import csv
+import json
 import logging
 import os
 import random
 import sys
+import tempfile
 import threading
 import webbrowser
 from datetime import datetime
@@ -35,6 +38,54 @@ REQUIRED_COLUMNS = ("DESCRIPTION", "URL", "PYTZ TIMEZONE", "SOURCE")
 SUPPORTED_SOURCES = {"Youtube", "NTV", "m3u8", "IPCam", "Earthcam"}
 logger = logging.getLogger(__name__)
 camera_lock = threading.Lock()
+
+
+def create_camera_order_file(camera_count):
+    order = list(range(camera_count))
+    random.shuffle(order)
+    temp_dir = Path("/var/tmp") if Path("/var/tmp").is_dir() else None
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        prefix="webcam-cycler-order-",
+        suffix=".json",
+        dir=temp_dir,
+        delete=False,
+    ) as order_file:
+        json.dump(order, order_file)
+        order_path = Path(order_file.name)
+
+    def remove_order_file():
+        try:
+            order_path.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            logger.warning("Unable to remove temporary camera order file %s", order_path)
+
+    atexit.register(remove_order_file)
+    return order_path
+
+
+def load_camera_order():
+    order_path = Path(app.config["CAMERA_ORDER_FILE"])
+    try:
+        with order_path.open(encoding="utf-8") as order_file:
+            order = json.load(order_file)
+    except (OSError, json.JSONDecodeError) as error:
+        raise RuntimeError(
+            f"Unable to read temporary camera order file {order_path}: {error}"
+        ) from error
+
+    camera_count = len(app.config["CAMERAS"])
+    if (
+        not isinstance(order, list)
+        or len(order) != camera_count
+        or any(type(index) is not int for index in order)
+        or set(order) != set(range(camera_count))
+    ):
+        raise RuntimeError(f"Invalid camera order in temporary file {order_path}")
+    return order
 
 
 def load_cameras(path=CAMERA_LIST):
@@ -87,18 +138,20 @@ def load_cameras(path=CAMERA_LIST):
 
 
 app.config["CAMERAS"] = load_cameras()
-app.config["CAMERA_ORDER"] = list(range(len(app.config["CAMERAS"])))
-random.shuffle(app.config["CAMERA_ORDER"])
+app.config["CAMERA_ORDER_FILE"] = str(
+    create_camera_order_file(len(app.config["CAMERAS"]))
+)
 app.config["CAMERA_POSITION"] = None
 app.config["CAMERA_INDEX"] = None
 
 
 def current_camera():
     cameras = app.config["CAMERAS"]
+    order = load_camera_order()
     with camera_lock:
         index = app.config["CAMERA_INDEX"]
         if index is None:
-            index = app.config["CAMERA_ORDER"][0]
+            index = order[0]
         return index, cameras[index]
 
 
@@ -168,7 +221,7 @@ def update_time_loop():
 
 @app.route("/shuffle/")
 def shuffle_webcam_locations():
-    order = app.config["CAMERA_ORDER"]
+    order = load_camera_order()
     with camera_lock:
         current_position = app.config["CAMERA_POSITION"]
         new_position = 0 if current_position is None else (
@@ -179,11 +232,12 @@ def shuffle_webcam_locations():
         app.config["CAMERA_INDEX"] = new_index
         camera = app.config["CAMERAS"][new_index]
 
-    return jsonify(camera_response(new_index, camera))
+    return jsonify(camera_response(new_index, camera, order))
 
 
-def camera_response(index, camera):
-    order = app.config["CAMERA_ORDER"]
+def camera_response(index, camera, order=None):
+    if order is None:
+        order = load_camera_order()
     position = order.index(index)
     return {
         "Webcam_local_time": camera_local_time(camera),
@@ -202,7 +256,7 @@ def get_camera(index):
     cameras = app.config["CAMERAS"]
     if not 0 <= index < len(cameras):
         return jsonify({"error": "Camera index is out of range"}), 404
-    return jsonify(camera_response(index, cameras[index]))
+    return jsonify(camera_response(index, cameras[index], load_camera_order()))
 
 
 @app.route("/navigate/<direction>/")
@@ -211,7 +265,7 @@ def navigate_camera(direction):
         return jsonify({"error": "Direction must be 'next' or 'previous'"}), 400
 
     cameras = app.config["CAMERAS"]
-    order = app.config["CAMERA_ORDER"]
+    order = load_camera_order()
     requested_index = request.args.get("index")
     if requested_index is not None:
         try:
@@ -238,7 +292,7 @@ def navigate_camera(direction):
         app.config["CAMERA_INDEX"] = new_index
         camera = cameras[new_index]
 
-    return jsonify(camera_response(new_index, camera))
+    return jsonify(camera_response(new_index, camera, order))
 
 
 @app.errorhandler(500)

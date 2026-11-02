@@ -78,9 +78,10 @@ class CameraRoutesTests(unittest.TestCase):
     def test_shuffle_returns_a_valid_camera_and_time(self):
         response = self.client.get("/shuffle/")
         data = response.json
+        order = main.load_camera_order()
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(data["CameraIndex"], main.app.config["CAMERA_ORDER"][0])
+        self.assertEqual(data["CameraIndex"], order[0])
         self.assertIn(
             data["ShuffledURL"],
             {camera["URL"] for camera in main.app.config["CAMERAS"]},
@@ -91,12 +92,10 @@ class CameraRoutesTests(unittest.TestCase):
         )
         self.assertTrue(data["webcamLocationDesc"])
         self.assertTrue(data["Webcam_local_time"])
-        self.assertEqual(
-            data["NextCameraIndex"], main.app.config["CAMERA_ORDER"][1]
-        )
+        self.assertEqual(data["NextCameraIndex"], order[1])
 
     def test_health_check_does_not_consume_first_camera_in_random_order(self):
-        order = main.app.config["CAMERA_ORDER"]
+        order = main.load_camera_order()
 
         self.client.get("/health/")
         first_camera = self.client.get("/shuffle/").json
@@ -104,7 +103,7 @@ class CameraRoutesTests(unittest.TestCase):
         self.assertEqual(first_camera["CameraIndex"], order[0])
 
     def test_shuffle_cycles_through_one_fixed_random_order(self):
-        order = main.app.config["CAMERA_ORDER"].copy()
+        order = main.load_camera_order()
 
         shuffled = [
             self.client.get("/shuffle/").json["CameraIndex"]
@@ -113,17 +112,23 @@ class CameraRoutesTests(unittest.TestCase):
 
         self.assertEqual(shuffled[:-1], order)
         self.assertEqual(shuffled[-1], order[0])
-        self.assertEqual(main.app.config["CAMERA_ORDER"], order)
 
     def test_random_order_contains_each_camera_once(self):
-        order = main.app.config["CAMERA_ORDER"]
+        order = main.load_camera_order()
 
         self.assertEqual(len(order), len(main.app.config["CAMERAS"]))
         self.assertEqual(set(order), set(range(len(main.app.config["CAMERAS"]))))
 
+    def test_random_order_is_stored_in_a_temp_file(self):
+        order_path = Path(main.app.config["CAMERA_ORDER_FILE"])
+
+        self.assertTrue(order_path.is_file())
+        self.assertNotIn("CAMERA_ORDER", main.app.config)
+        self.assertEqual(len(main.load_camera_order()), len(main.app.config["CAMERAS"]))
+
     def test_previous_and_next_navigate_cameras_in_randomized_order(self):
         cameras = main.app.config["CAMERAS"]
-        order = main.app.config["CAMERA_ORDER"]
+        order = main.load_camera_order()
         main.app.config["CAMERA_INDEX"] = order[0]
         main.app.config["CAMERA_POSITION"] = 0
 
@@ -140,7 +145,7 @@ class CameraRoutesTests(unittest.TestCase):
         )
 
     def test_camera_navigation_wraps_at_both_ends(self):
-        order = main.app.config["CAMERA_ORDER"]
+        order = main.load_camera_order()
         main.app.config["CAMERA_INDEX"] = order[-1]
         main.app.config["CAMERA_POSITION"] = len(order) - 1
 
@@ -153,7 +158,7 @@ class CameraRoutesTests(unittest.TestCase):
         )
 
     def test_camera_navigation_uses_the_calling_viewer_index(self):
-        order = main.app.config["CAMERA_ORDER"]
+        order = main.load_camera_order()
         expected_index = order[(order.index(0) + 1) % len(order)]
         main.app.config["CAMERA_INDEX"] = order[-1]
         main.app.config["CAMERA_POSITION"] = len(order) - 1
