@@ -203,6 +203,8 @@ class CameraRoutesTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn('id="VideoElement"', page)
         self.assertIn('id="iFrameElement"', page)
+        self.assertIn("camera 'none'", page)
+        self.assertIn("microphone 'none'", page)
         self.assertIn('id="Previous_camera"', page)
         self.assertIn('id="Next_camera"', page)
         self.assertIn("hls.js@1.5.17", page)

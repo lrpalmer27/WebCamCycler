@@ -255,8 +255,9 @@ async function prepareSlot(slot, data, waitForReady = true) {
 
         if (window.Hls && Hls.isSupported()) {
             slot.hls = new Hls({
-                maxBufferLength: 4,
-                maxMaxBufferLength: 6,
+                maxBufferLength: 2,
+                maxMaxBufferLength: 3,
+                maxBufferSize: 12 * 1024 * 1024,
             });
             slot.hls.on(Hls.Events.ERROR, (_event, errorData) => {
                 if (!errorData.fatal || slot.loadId !== loadId) {
@@ -300,8 +301,8 @@ async function prepareSlot(slot, data, waitForReady = true) {
     } else {
         slot.iframe.hidden = false;
         slot.iframe.allow = iframeIsExplicitlyMuted(data.ShuffledURL)
-            ? "autoplay; fullscreen; encrypted-media"
-            : "fullscreen; encrypted-media";
+            ? "camera 'none'; microphone 'none'; autoplay; fullscreen; encrypted-media"
+            : "camera 'none'; microphone 'none'; fullscreen; encrypted-media";
         slot.iframe.addEventListener("load", () => {
             ready();
         }, { once: true });

@@ -49,6 +49,8 @@ be embeddable or available.
 
 The Flask server listens only on `127.0.0.1`; it is intended for a browser
 running on the same device and is not exposed to other devices on the network.
+The viewer embeds remote webcam pages but does not use the Pi's camera or
+microphone; those permissions are denied to embedded pages.
 
 At server startup, the camera list is shuffled once into a random order. The
 viewer then advances through every camera in that order before repeating it.
@@ -63,6 +65,10 @@ the randomized order. This avoids keeping an additional webcam player and its
 buffers in memory, at the cost of a visible loading gap during switches.
 Manual side-clicks immediately select the chosen stream. If every feed is
 unavailable, the viewer retries shortly.
+
+Direct HLS playback limits its buffer to about two seconds and 12 MiB to reduce
+memory use; on a slow or inconsistent connection, this may cause more
+rebuffering. Embedded webcam pages control their own memory and buffering.
 
 The camera list is validated at startup. Missing columns, blank values,
 unsupported playback types, invalid URLs, and unknown time zones are reported
