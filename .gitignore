@@ -219,3 +219,6 @@ __marimo__/
 ~$*
 
 node_modules/
+
+# Runtime camera-order scratch files
+webcam-cycler-order-*.json
