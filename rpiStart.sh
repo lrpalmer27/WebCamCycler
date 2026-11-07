@@ -5,9 +5,11 @@ LOG_DIR="$APP_DIR/logs"
 LOGFILE="$LOG_DIR/logfile.txt"
 CHROMIUM_LOGFILE="$LOG_DIR/chromium.log"
 PIDFILE="$LOG_DIR/webcam-cycler.pid"
+WATCHDOG_PIDFILE="$LOG_DIR/webcam-cycler-watchdog.pid"
 DEPENDENCY_COMMIT_FILE="$LOG_DIR/dependencies-commit"
 REQUIREMENTS_FILE="$APP_DIR/PIRequirements.txt"
 CHROMIUM_STARTUP_DELAY_SECONDS=20
+WATCHDOG_PID=''
 
 log() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" >> "$LOGFILE"
@@ -31,6 +33,24 @@ if ! mkdir -p "$LOG_DIR"; then
 fi
 
 log "===== rpiStart.sh starting (directory: $APP_DIR) ====="
+
+if [[ -r "$WATCHDOG_PIDFILE" ]]; then
+    OLD_WATCHDOG_PID="$(cat "$WATCHDOG_PIDFILE")"
+    OLD_WATCHDOG_COMMAND=''
+    if [[ "$OLD_WATCHDOG_PID" =~ ^[0-9]+$ ]] \
+        && [[ -r "/proc/$OLD_WATCHDOG_PID/cmdline" ]]; then
+        OLD_WATCHDOG_COMMAND="$(tr '\0' ' ' < "/proc/$OLD_WATCHDOG_PID/cmdline")"
+    fi
+    if [[ "$OLD_WATCHDOG_COMMAND" == *"$APP_DIR/rpiWatchdog.sh"* ]] \
+        && kill -0 "$OLD_WATCHDOG_PID" 2>/dev/null; then
+        log "Stopping previous Chromium watchdog (PID $OLD_WATCHDOG_PID)"
+        if ! kill "$OLD_WATCHDOG_PID"; then
+            log "ERROR: could not stop previous Chromium watchdog"
+            exit 1
+        fi
+        sleep 2
+    fi
+fi
 
 # retain the display session inherited from the desktop; use :0 as fallback
 export DISPLAY="${DISPLAY:-:0}"
@@ -153,37 +173,34 @@ log "Recording Chromium diagnostics in $CHROMIUM_LOGFILE"
     fi
 } >> "$CHROMIUM_LOGFILE" 2>&1
 
-log "Launching Chromium in kiosk mode with software rendering: $CHROMIUM_BIN"
-nohup bash -c '
-    LOGFILE="$1"
-    CHROMIUM_LOGFILE="$2"
-    shift 2
-    "$@" --enable-logging=stderr --v=0 >> "$CHROMIUM_LOGFILE" 2>&1
-    STATUS=$?
-    if (( STATUS > 128 )); then
-        printf "[%s] Chromium exited with status %d (signal %d)\n" \
-            "$(date "+%Y-%m-%d %H:%M:%S %z")" "$STATUS" "$((STATUS - 128))" >> "$LOGFILE"
-    else
-        printf "[%s] Chromium exited with status %d\n" \
-            "$(date "+%Y-%m-%d %H:%M:%S %z")" "$STATUS" >> "$LOGFILE"
-    fi
-    exit "$STATUS"
-' rpiStart "$LOGFILE" "$CHROMIUM_LOGFILE" "$CHROMIUM_BIN" \
-    --disable-gpu --kiosk --incognito --no-first-run --disable-infobars --password-store="basic" \
+log "Starting Chromium watchdog with X11 and software rendering"
+nohup bash "$APP_DIR/rpiWatchdog.sh" \
+    "$CHROMIUM_BIN" "$LOGFILE" "$CHROMIUM_LOGFILE" "$WATCHDOG_PIDFILE" \
+    --ozone-platform=x11 --disable-gpu --disable-gpu-compositing \
+    --disable-gpu-rasterization --kiosk --incognito --no-first-run \
+    --disable-infobars --password-store="basic" \
     http://127.0.0.1:5050 </dev/null >/dev/null 2>&1 &
-CHROMIUM_PID=$!
-log "Chromium launch requested (PID $CHROMIUM_PID); checking startup"
+WATCHDOG_PID=$!
+if ! printf '%s\n' "$WATCHDOG_PID" > "$WATCHDOG_PIDFILE"; then
+    log "ERROR: unable to write Chromium watchdog PID file"
+    exit 1
+fi
+log "Chromium watchdog launched (PID $WATCHDOG_PID); checking startup"
 sleep 10
-if kill -0 "$CHROMIUM_PID" 2>/dev/null; then
-    log "Chromium launcher process $CHROMIUM_PID is still running"
+if kill -0 "$WATCHDOG_PID" 2>/dev/null; then
+    log "Chromium watchdog process $WATCHDOG_PID is still running"
 else
-    wait "$CHROMIUM_PID"
-    CHROMIUM_STATUS=$?
-    log "ERROR: Chromium launcher exited during startup with status $CHROMIUM_STATUS; see $CHROMIUM_LOGFILE"
+    wait "$WATCHDOG_PID"
+    WATCHDOG_STATUS=$?
+    log "ERROR: Chromium watchdog exited during startup with status $WATCHDOG_STATUS; see $CHROMIUM_LOGFILE"
 fi
 
 cleanup () {
 	log "Cleanup started"
+	if [[ -n "$WATCHDOG_PID" ]] && kill -0 "$WATCHDOG_PID" 2>/dev/null; then
+		kill "$WATCHDOG_PID"
+		log "Stopped Chromium watchdog process $WATCHDOG_PID"
+	fi
 	if pkill chromium 2>/dev/null; then
 		log "Stopped Chromium"
 	fi
@@ -208,7 +225,6 @@ cleanup () {
 	log "Cleanup complete"
 }
 
-trap cleanup SIGINT
-trap cleanup SIGTSTP
+trap 'cleanup; exit 0' SIGINT SIGTSTP SIGTERM
 
-log "Startup procedure complete; app remains detached in the background (PID $APP_PID)"
+log "Startup procedure complete; app and Chromium watchdog remain detached (PIDs $APP_PID, $WATCHDOG_PID)"

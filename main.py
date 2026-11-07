@@ -7,6 +7,7 @@ import random
 import sys
 import tempfile
 import threading
+import time
 import webbrowser
 from datetime import datetime
 from pathlib import Path
@@ -143,6 +144,8 @@ app.config["CAMERA_ORDER_FILE"] = str(
 )
 app.config["CAMERA_POSITION"] = None
 app.config["CAMERA_INDEX"] = None
+app.config["BROWSER_HEARTBEAT_AT"] = None
+BROWSER_HEARTBEAT_TIMEOUT_SECONDS = 45
 
 
 def current_camera():
@@ -189,6 +192,22 @@ def health():
             "development_mode": app.config["DEV_MODE"],
         }
     )
+
+
+@app.route("/browser-heartbeat/", methods=["GET", "POST"])
+def browser_heartbeat():
+    if request.method == "POST":
+        app.config["BROWSER_HEARTBEAT_AT"] = time.monotonic()
+        return "", 204
+
+    heartbeat_at = app.config["BROWSER_HEARTBEAT_AT"]
+    if heartbeat_at is None:
+        return jsonify({"status": "stale"}), 503
+
+    age = time.monotonic() - heartbeat_at
+    if age >= BROWSER_HEARTBEAT_TIMEOUT_SECONDS:
+        return jsonify({"status": "stale", "age_seconds": age}), 503
+    return jsonify({"status": "ok", "age_seconds": age})
 
 
 @app.route("/cameras/")

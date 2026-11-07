@@ -2,6 +2,7 @@ const SHUFFLE_INTERVAL_MS = 60000;
 const RETRY_INTERVAL_MS = 10000;
 const PLAYBACK_TIMEOUT_MS = 30000;
 const CAMERA_LOAD_TIMEOUT_MS = 12000;
+const BROWSER_HEARTBEAT_INTERVAL_MS = 15000;
 
 let playbackTimeout = null;
 let retryTimeout = null;
@@ -53,9 +54,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     ShuffleVideoSource();
+    sendBrowserHeartbeat();
+    window.setInterval(sendBrowserHeartbeat, BROWSER_HEARTBEAT_INTERVAL_MS);
     window.setInterval(UpdateWebcamLocalTime, 10000);
     window.setInterval(ShuffleVideoSource, SHUFFLE_INTERVAL_MS);
 });
+
+function sendBrowserHeartbeat() {
+    fetch("/browser-heartbeat/", { method: "POST", cache: "no-store" })
+        .catch((error) => {
+            console.error("Unable to send browser heartbeat:", error);
+        });
+}
 
 function showStatus(message) {
     document.getElementById("Playback_status").innerText = message;

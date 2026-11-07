@@ -93,7 +93,25 @@ The startup script uses the project path shown above; update `APP_DIR` in
 For Raspberry Pi startup troubleshooting, `logs/logfile.txt` records launcher
 steps and Chromium's exit status. Chromium diagnostics, including its version
 and available memory and `/dev/shm` space at launch, are written to
-`logs/chromium.log`.
+`logs/chromium.log`. The kiosk starts Chromium in software-rendered X11 mode
+through XWayland. The viewer sends a heartbeat every 15 seconds; if Chromium's
+page renderer crashes or stops responding, the watchdog restarts Chromium after
+90 seconds without a heartbeat. This is useful on the Pi 3's memory- and
+graphics-constrained desktop and does not change the camera list or playback
+order.
+
+If Chromium continues to crash, update the Pi's OS-managed browser package and
+restart the kiosk service:
+
+```
+sudo apt update
+sudo apt install --only-upgrade chromium
+systemctl --user restart webcamcycler.service
+```
+
+The Chromium package and desktop session are Pi setup, not app dependencies,
+so those package updates are not stored in Git. The app code and watchdog are
+tracked here and deployed from `main`.
 
 Commits pushed to the `main` branch are automatically deployed to the
 Raspberry Pi.

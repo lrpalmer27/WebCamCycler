@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import main
 
@@ -55,6 +56,7 @@ class CameraRoutesTests(unittest.TestCase):
         main.app.config["CAMERA_INDEX"] = None
         main.app.config["CAMERA_POSITION"] = None
         main.app.config["DEV_MODE"] = False
+        main.app.config["BROWSER_HEARTBEAT_AT"] = None
 
     def test_health_and_camera_list_report_all_configured_cameras(self):
         health = self.client.get("/health/")
@@ -74,6 +76,32 @@ class CameraRoutesTests(unittest.TestCase):
             {camera["source"] for camera in camera_list.json},
             {"Youtube", "NTV", "m3u8", "IPCam", "Earthcam"},
         )
+
+    def test_browser_heartbeat_is_stale_until_the_viewer_reports(self):
+        response = self.client.get("/browser-heartbeat/")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json["status"], "stale")
+
+    def test_browser_heartbeat_expires_when_viewer_stops_reporting(self):
+        with patch("main.time.monotonic", return_value=100):
+            posted = self.client.post("/browser-heartbeat/")
+        with patch("main.time.monotonic", return_value=145):
+            status = self.client.get("/browser-heartbeat/")
+
+        self.assertEqual(posted.status_code, 204)
+        self.assertEqual(status.status_code, 503)
+        self.assertEqual(status.json["status"], "stale")
+
+    def test_browser_heartbeat_is_healthy_when_viewer_reports(self):
+        with patch("main.time.monotonic", return_value=100):
+            self.client.post("/browser-heartbeat/")
+        with patch("main.time.monotonic", return_value=120):
+            status = self.client.get("/browser-heartbeat/")
+
+        self.assertEqual(status.status_code, 200)
+        self.assertEqual(status.json["status"], "ok")
+        self.assertEqual(status.json["age_seconds"], 20)
 
     def test_shuffle_returns_a_valid_camera_and_time(self):
         response = self.client.get("/shuffle/")
@@ -213,6 +241,11 @@ class CameraRoutesTests(unittest.TestCase):
         self.assertIn('id="Previous_camera"', page)
         self.assertIn('id="Next_camera"', page)
         self.assertIn("hls.js@1.5.17", page)
+        cycler_script = Path(main.app.root_path) / "static" / "Cycler.js"
+        self.assertIn(
+            'fetch("/browser-heartbeat/"',
+            cycler_script.read_text(encoding="utf-8"),
+        )
 
     def test_development_reload_is_available_only_when_enabled(self):
         self.assertEqual(self.client.get("/dev/revision/").status_code, 404)
