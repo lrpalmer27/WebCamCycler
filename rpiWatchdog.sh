@@ -1,41 +1,44 @@
 #!/bin/bash
 
-CHROMIUM_BIN="$1"
+BROWSER_BIN="$1"
 LOGFILE="$2"
-CHROMIUM_LOGFILE="$3"
+BROWSER_LOGFILE="$3"
 WATCHDOG_PIDFILE="$4"
-shift 4
-CHROMIUM_ARGS=("$@")
+BROWSER_PROCESS_NAME="$5"
+BROWSER_LIBRARY_PATH="$6"
+shift 6
+BROWSER_ARGS=("$@")
 HEARTBEAT_CHECK_INTERVAL_SECONDS=15
 HEARTBEAT_FAILURE_LIMIT=4
-CHROMIUM_PID=''
+BROWSER_PID=''
 HEARTBEAT_FAILURES=0
 
 log() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" >> "$LOGFILE"
 }
 
-start_chromium() {
-    "$CHROMIUM_BIN" "${CHROMIUM_ARGS[@]}" \
-        --enable-logging=stderr --v=0 >> "$CHROMIUM_LOGFILE" 2>&1 &
-    CHROMIUM_PID=$!
+start_browser() {
+    LD_LIBRARY_PATH="$BROWSER_LIBRARY_PATH" MOZ_ENABLE_WAYLAND=0 \
+        "$BROWSER_BIN" "${BROWSER_ARGS[@]}" \
+        >> "$BROWSER_LOGFILE" 2>&1 &
+    BROWSER_PID=$!
     HEARTBEAT_FAILURES=0
-    log "Chromium started by watchdog (PID $CHROMIUM_PID)"
+    log "Browser started by watchdog (PID $BROWSER_PID)"
 }
 
-stop_chromium() {
-    if pgrep -x chromium >/dev/null 2>&1; then
-        pkill -TERM -x chromium 2>/dev/null || true
+stop_browser() {
+    if pgrep -u "$UID" -x "$BROWSER_PROCESS_NAME" >/dev/null 2>&1; then
+        pkill -TERM -u "$UID" -x "$BROWSER_PROCESS_NAME" 2>/dev/null || true
     fi
-    if [[ -n "$CHROMIUM_PID" ]]; then
-        wait "$CHROMIUM_PID" 2>/dev/null || true
-        CHROMIUM_PID=''
+    if [[ -n "$BROWSER_PID" ]]; then
+        wait "$BROWSER_PID" 2>/dev/null || true
+        BROWSER_PID=''
     fi
 }
 
 cleanup() {
     trap - EXIT INT TERM
-    stop_chromium
+    stop_browser
     if [[ -r "$WATCHDOG_PIDFILE" ]] \
         && [[ "$(cat "$WATCHDOG_PIDFILE")" == "$$" ]]; then
         rm -f "$WATCHDOG_PIDFILE"
@@ -46,17 +49,17 @@ printf '%s\n' "$$" > "$WATCHDOG_PIDFILE"
 trap cleanup EXIT
 trap 'exit 0' INT TERM
 
-start_chromium
+start_browser
 while true; do
     sleep "$HEARTBEAT_CHECK_INTERVAL_SECONDS"
 
-    if ! kill -0 "$CHROMIUM_PID" 2>/dev/null; then
-        wait "$CHROMIUM_PID"
-        CHROMIUM_STATUS=$?
-        CHROMIUM_PID=''
-        log "Chromium exited with status $CHROMIUM_STATUS; restarting"
+    if ! kill -0 "$BROWSER_PID" 2>/dev/null; then
+        wait "$BROWSER_PID"
+        BROWSER_STATUS=$?
+        BROWSER_PID=''
+        log "Browser exited with status $BROWSER_STATUS; restarting"
         sleep 5
-        start_chromium
+        start_browser
         continue
     fi
 
@@ -66,10 +69,10 @@ while true; do
     else
         HEARTBEAT_FAILURES=$((HEARTBEAT_FAILURES + 1))
         if (( HEARTBEAT_FAILURES >= HEARTBEAT_FAILURE_LIMIT )); then
-            log "Viewer heartbeat missed $HEARTBEAT_FAILURES checks; restarting Chromium"
-            stop_chromium
+            log "Viewer heartbeat missed $HEARTBEAT_FAILURES checks; restarting browser"
+            stop_browser
             sleep 5
-            start_chromium
+            start_browser
         fi
     fi
 done

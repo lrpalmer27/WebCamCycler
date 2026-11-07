@@ -3,12 +3,16 @@
 APP_DIR='/home/logan/Desktop/WebCamCycler'
 LOG_DIR="$APP_DIR/logs"
 LOGFILE="$LOG_DIR/logfile.txt"
-CHROMIUM_LOGFILE="$LOG_DIR/chromium.log"
+FIREFOX_LOGFILE="$LOG_DIR/firefox.log"
 PIDFILE="$LOG_DIR/webcam-cycler.pid"
 WATCHDOG_PIDFILE="$LOG_DIR/webcam-cycler-watchdog.pid"
 DEPENDENCY_COMMIT_FILE="$LOG_DIR/dependencies-commit"
 REQUIREMENTS_FILE="$APP_DIR/PIRequirements.txt"
-CHROMIUM_STARTUP_DELAY_SECONDS=20
+FIREFOX_ROOT="$HOME/.local/opt/webcamcycler-firefox-mozilla/firefox"
+FIREFOX_RUNTIME_ROOT="$HOME/.local/opt/webcamcycler-firefox-runtime/usr/lib/aarch64-linux-gnu"
+FIREFOX_BIN="$FIREFOX_ROOT/firefox"
+FIREFOX_PROFILE_DIR="$HOME/.local/share/webcamcycler/firefox-profile"
+FIREFOX_STARTUP_DELAY_SECONDS=20
 WATCHDOG_PID=''
 
 log() {
@@ -34,6 +38,15 @@ fi
 
 log "===== rpiStart.sh starting (directory: $APP_DIR) ====="
 
+if [[ ! -x "$FIREFOX_BIN" ]]; then
+    log "ERROR: Firefox is not installed at $FIREFOX_BIN; see the Firefox setup instructions in README.md"
+    exit 1
+fi
+if [[ ! -r "$FIREFOX_RUNTIME_ROOT/libnss3.so" || ! -r "$FIREFOX_RUNTIME_ROOT/libnspr4.so" ]]; then
+    log "ERROR: Firefox's user-local NSS/NSPR libraries are missing under $FIREFOX_RUNTIME_ROOT"
+    exit 1
+fi
+
 if [[ -r "$WATCHDOG_PIDFILE" ]]; then
     OLD_WATCHDOG_PID="$(cat "$WATCHDOG_PIDFILE")"
     OLD_WATCHDOG_COMMAND=''
@@ -43,9 +56,9 @@ if [[ -r "$WATCHDOG_PIDFILE" ]]; then
     fi
     if [[ "$OLD_WATCHDOG_COMMAND" == *"$APP_DIR/rpiWatchdog.sh"* ]] \
         && kill -0 "$OLD_WATCHDOG_PID" 2>/dev/null; then
-        log "Stopping previous Chromium watchdog (PID $OLD_WATCHDOG_PID)"
+        log "Stopping previous browser watchdog (PID $OLD_WATCHDOG_PID)"
         if ! kill "$OLD_WATCHDOG_PID"; then
-            log "ERROR: could not stop previous Chromium watchdog"
+            log "ERROR: could not stop previous browser watchdog"
             exit 1
         fi
         sleep 2
@@ -76,13 +89,11 @@ if ! command -v xdotool >/dev/null 2>&1; then
     log "WARNING: xdotool is unavailable; NTV camera activation requires 'sudo apt install xdotool'"
 fi
 
-# kill browser
-log "Closing any existing Chromium process"
-if pkill chromium 2>/dev/null; then
-    log "Existing Chromium process stopped"
-else
-    log "No existing Chromium process found"
-fi
+for browser_process in chromium firefox; do
+    if pkill -u "$UID" -x "$browser_process" 2>/dev/null; then
+        log "Stopped existing $browser_process process"
+    fi
+done
 
 # stop the previously recorded Flask process if it is still running
 if [[ -f "$PIDFILE" ]]; then
@@ -171,60 +182,69 @@ fi
 log "Python app process $APP_PID is running"
 
 # give the Raspberry Pi desktop and display session time to finish starting
-log "Waiting ${CHROMIUM_STARTUP_DELAY_SECONDS}s for the Raspberry Pi display to settle before starting Chromium"
-sleep "$CHROMIUM_STARTUP_DELAY_SECONDS"
+log "Waiting ${FIREFOX_STARTUP_DELAY_SECONDS}s for the Raspberry Pi display to settle before starting Firefox"
+sleep "$FIREFOX_STARTUP_DELAY_SECONDS"
 
-# use software rendering because Chromium's GPU process fails on this Pi setup
-# open Chromium in kiosk mode to hide browser controls and fill the display
-CHROMIUM_BIN="$(command -v chromium)" || {
-    log "ERROR: chromium executable was not found on PATH"
+if ! mkdir -p "$FIREFOX_PROFILE_DIR"; then
+    log "ERROR: unable to create Firefox profile directory $FIREFOX_PROFILE_DIR"
     exit 1
-}
-log "Recording Chromium diagnostics in $CHROMIUM_LOGFILE"
+fi
+if ! printf '%s\n' \
+    'user_pref("media.autoplay.default", 0);' \
+    'user_pref("media.autoplay.blocking_policy", 0);' \
+    'user_pref("media.autoplay.block-webaudio", false);' \
+    'user_pref("app.update.enabled", false);' \
+    > "$FIREFOX_PROFILE_DIR/user.js"; then
+    log "ERROR: unable to configure Firefox kiosk preferences"
+    exit 1
+fi
+
+FIREFOX_LIBRARY_PATH="$FIREFOX_RUNTIME_ROOT:$FIREFOX_ROOT"
+log "Recording Firefox diagnostics in $FIREFOX_LOGFILE"
 {
-    printf '\n[%s] ===== Chromium launch diagnostics =====\n' \
+    printf '\n[%s] ===== Firefox launch diagnostics =====\n' \
         "$(date '+%Y-%m-%d %H:%M:%S %z')"
-    "$CHROMIUM_BIN" --version
+    LD_LIBRARY_PATH="$FIREFOX_LIBRARY_PATH" "$FIREFOX_BIN" --version
     if command -v free >/dev/null 2>&1; then
         free -h
     fi
     if command -v df >/dev/null 2>&1; then
         df -h /dev/shm
     fi
-} >> "$CHROMIUM_LOGFILE" 2>&1
+} >> "$FIREFOX_LOGFILE" 2>&1
 
-log "Starting Chromium watchdog with X11 and software rendering"
+log "Starting Firefox watchdog on X11"
 nohup bash "$APP_DIR/rpiWatchdog.sh" \
-    "$CHROMIUM_BIN" "$LOGFILE" "$CHROMIUM_LOGFILE" "$WATCHDOG_PIDFILE" \
-    --no-gl-override --ozone-platform=x11 --disable-gpu --disable-gpu-compositing \
-    --disable-gpu-rasterization --disable-accelerated-video-decode \
-    --disable-accelerated-video-encode --kiosk --incognito --no-first-run \
-    --disable-infobars --password-store="basic" \
+    "$FIREFOX_BIN" "$LOGFILE" "$FIREFOX_LOGFILE" "$WATCHDOG_PIDFILE" \
+    firefox "$FIREFOX_LIBRARY_PATH" --no-remote --kiosk --private-window \
+    --profile "$FIREFOX_PROFILE_DIR" \
     http://127.0.0.1:5050 </dev/null >/dev/null 2>&1 &
 WATCHDOG_PID=$!
 if ! printf '%s\n' "$WATCHDOG_PID" > "$WATCHDOG_PIDFILE"; then
-    log "ERROR: unable to write Chromium watchdog PID file"
+    log "ERROR: unable to write browser watchdog PID file"
     exit 1
 fi
-log "Chromium watchdog launched (PID $WATCHDOG_PID); checking startup"
+log "Firefox watchdog launched (PID $WATCHDOG_PID); checking startup"
 sleep 10
 if kill -0 "$WATCHDOG_PID" 2>/dev/null; then
-    log "Chromium watchdog process $WATCHDOG_PID is still running"
+    log "Firefox watchdog process $WATCHDOG_PID is still running"
 else
     wait "$WATCHDOG_PID"
     WATCHDOG_STATUS=$?
-    log "ERROR: Chromium watchdog exited during startup with status $WATCHDOG_STATUS; see $CHROMIUM_LOGFILE"
+    log "ERROR: browser watchdog exited during startup with status $WATCHDOG_STATUS; see $FIREFOX_LOGFILE"
 fi
 
 cleanup () {
 	log "Cleanup started"
 	if [[ -n "$WATCHDOG_PID" ]] && kill -0 "$WATCHDOG_PID" 2>/dev/null; then
 		kill "$WATCHDOG_PID"
-		log "Stopped Chromium watchdog process $WATCHDOG_PID"
+		log "Stopped browser watchdog process $WATCHDOG_PID"
 	fi
-	if pkill chromium 2>/dev/null; then
-		log "Stopped Chromium"
-	fi
+	for browser_process in chromium firefox; do
+		if pkill -u "$UID" -x "$browser_process" 2>/dev/null; then
+			log "Stopped $browser_process"
+		fi
+	done
 	if pkill ffmpeg 2>/dev/null; then
 		log "Stopped FFmpeg"
 	fi
@@ -248,4 +268,4 @@ cleanup () {
 
 trap 'cleanup; exit 0' SIGINT SIGTSTP SIGTERM
 
-log "Startup procedure complete; app and Chromium watchdog remain detached (PIDs $APP_PID, $WATCHDOG_PID)"
+log "Startup procedure complete; app and Firefox watchdog remain detached (PIDs $APP_PID, $WATCHDOG_PID)"

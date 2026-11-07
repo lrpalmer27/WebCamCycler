@@ -58,12 +58,12 @@ Use the left and right edge click areas (or Left/Right arrow keys) to move
 backward or forward within that same order; navigation wraps at both ends.
 Restarting the server creates a new random order.
 The selected camera position is also kept on the server as the viewer advances,
-so a Chromium restart resumes after the last selected camera instead of
+so a browser restart resumes after the last selected camera instead of
 repeating the camera that caused the browser to fail.
 The order is written to a temporary JSON file (`/var/tmp` on Linux) and read
 when needed instead of being kept as a Python list. This only saves a few
 hundred bytes; moving the camera definitions to disk would not meaningfully
-reduce Chromium's video memory use.
+reduce the browser's video memory use.
 
 The viewer uses a single player and does not preload the next camera. When a
 timed switch starts, each candidate replaces the current stream and gets up to
@@ -94,15 +94,12 @@ The startup script uses the project path shown above; update `APP_DIR` in
 `rpiStart.sh` if the project is installed elsewhere.
 
 For Raspberry Pi startup troubleshooting, `logs/logfile.txt` records launcher
-steps and Chromium's exit status. Chromium diagnostics, including its version
-and available memory and `/dev/shm` space at launch, are written to
-`logs/chromium.log`. The kiosk starts Chromium through XWayland with the
-Debian-forced ANGLE/GLES override, GPU compositing, rasterization, and hardware
-video acceleration disabled. The viewer sends a heartbeat every 15 seconds.
-If Chromium's page renderer crashes or stops responding, the watchdog restarts
-Chromium after about 90 seconds without a heartbeat. This is useful on the Pi
-3's memory- and graphics-constrained desktop and does not change the camera
-list or playback order.
+steps and browser restarts. Firefox version and available memory and `/dev/shm`
+space at launch are written to `logs/firefox.log`. The kiosk uses Firefox ESR
+in X11 kiosk mode. The viewer sends a heartbeat every 15 seconds; after four
+missed checks (about 60 seconds), the watchdog restarts the browser. The browser
+profile allows autoplay for webcam feeds and disables Firefox self-updates so
+the browser and its user-local runtime libraries can be updated together.
 
 Some NTV camera players require a real user gesture before starting video. When
 an NTV camera page finishes loading, the viewer makes one center-screen click
@@ -131,18 +128,37 @@ rather than in Git. The launcher logs a warning if `xdotool` is missing. The
 click is attempted once per NTV camera load to avoid repeatedly toggling
 playback.
 
-If Chromium continues to crash, update the Pi's OS-managed browser package and
-restart the kiosk service:
+The Pi 3's Chromium renderer continued to crash with error code 11, so the kiosk
+uses the official Mozilla Firefox ESR ARM64 build instead. The deployed Pi is
+Debian 13, whose system NSS library is older than the one required by the
+current Firefox build. To avoid a system package install or `sudo`, Firefox and
+matching Debian NSS/NSPR libraries are extracted under the `logan` account's
+home directory. These packages are Pi setup, not app dependencies, so they are
+not stored in Git. Recreate the current user-local setup with:
 
 ```
-sudo apt update
-sudo apt install --only-upgrade chromium
-systemctl --user restart webcamcycler.service
+FIREFOX_ROOT="$HOME/.local/opt/webcamcycler-firefox-mozilla"
+FIREFOX_RUNTIME_ROOT="$HOME/.local/opt/webcamcycler-firefox-runtime"
+FIREFOX_CACHE="$HOME/.cache/webcamcycler-firefox-mozilla"
+mkdir -p "$FIREFOX_ROOT" "$FIREFOX_RUNTIME_ROOT" "$FIREFOX_CACHE"
+cd "$FIREFOX_CACHE"
+curl --fail --location -o firefox-esr.tar.xz \
+  'https://download-installer.cdn.mozilla.net/pub/firefox/releases/153.6.0esr/linux-aarch64/en-US/firefox-153.6.0esr.tar.xz'
+curl --fail --location --remote-name \
+  'https://deb.debian.org/debian/pool/main/n/nss/libnss3_3.132-1_arm64.deb'
+curl --fail --location --remote-name \
+  'https://deb.debian.org/debian/pool/main/n/nspr/libnspr4_4.40-1_arm64.deb'
+tar -xJf firefox-esr.tar.xz -C "$FIREFOX_ROOT"
+for package in ./*.deb; do
+    dpkg-deb -x "$package" "$FIREFOX_RUNTIME_ROOT"
+done
 ```
 
-The Chromium package and desktop session are Pi setup, not app dependencies,
-so those package updates are not stored in Git. The app code and watchdog are
-tracked here and deployed from `main`.
+The launcher passes the extracted NSS/NSPR library path only to Firefox; it
+does not affect the Python app or `xdotool`. Set up these user-local files
+before restarting `webcamcycler.service`. When updating Firefox, verify its
+required NSS version and update the extracted runtime libraries as needed.
+The app code and watchdog are tracked here and deployed from `main`.
 
 Commits pushed to the `main` branch are automatically deployed to the
 Raspberry Pi.
