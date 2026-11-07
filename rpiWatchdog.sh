@@ -7,9 +7,9 @@ WATCHDOG_PIDFILE="$4"
 shift 4
 CHROMIUM_ARGS=("$@")
 HEARTBEAT_CHECK_INTERVAL_SECONDS=15
-HEARTBEAT_STARTUP_GRACE_SECONDS=90
+HEARTBEAT_FAILURE_LIMIT=4
 CHROMIUM_PID=''
-LAST_HEARTBEAT_SECONDS=$SECONDS
+HEARTBEAT_FAILURES=0
 
 log() {
     printf '[%s] %s\n' "$(date '+%Y-%m-%d %H:%M:%S %z')" "$*" >> "$LOGFILE"
@@ -19,7 +19,7 @@ start_chromium() {
     "$CHROMIUM_BIN" "${CHROMIUM_ARGS[@]}" \
         --enable-logging=stderr --v=0 >> "$CHROMIUM_LOGFILE" 2>&1 &
     CHROMIUM_PID=$!
-    LAST_HEARTBEAT_SECONDS=$SECONDS
+    HEARTBEAT_FAILURES=0
     log "Chromium started by watchdog (PID $CHROMIUM_PID)"
 }
 
@@ -62,11 +62,14 @@ while true; do
 
     if curl --silent --show-error --fail --max-time 3 \
         http://127.0.0.1:5050/browser-heartbeat/ >/dev/null 2>&1; then
-        LAST_HEARTBEAT_SECONDS=$SECONDS
-    elif (( SECONDS - LAST_HEARTBEAT_SECONDS >= HEARTBEAT_STARTUP_GRACE_SECONDS )); then
-        log "Viewer heartbeat stopped; restarting Chromium"
-        stop_chromium
-        sleep 5
-        start_chromium
+        HEARTBEAT_FAILURES=0
+    else
+        HEARTBEAT_FAILURES=$((HEARTBEAT_FAILURES + 1))
+        if (( HEARTBEAT_FAILURES >= HEARTBEAT_FAILURE_LIMIT )); then
+            log "Viewer heartbeat missed $HEARTBEAT_FAILURES checks; restarting Chromium"
+            stop_chromium
+            sleep 5
+            start_chromium
+        fi
     fi
 done
