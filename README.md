@@ -96,10 +96,11 @@ The startup script uses the project path shown above; update `APP_DIR` in
 For Raspberry Pi startup troubleshooting, `logs/logfile.txt` records launcher
 steps and Chromium's exit status. Chromium diagnostics, including its version
 and available memory and `/dev/shm` space at launch, are written to
-`logs/chromium.log`. The kiosk starts Chromium in software-rendered X11 mode
-through XWayland. The viewer sends a heartbeat every 15 seconds; if Chromium's
-page renderer crashes or stops responding, the watchdog restarts Chromium after
-90 seconds without a heartbeat. This is useful on the Pi 3's memory- and
+`logs/chromium.log`. The kiosk starts Chromium through XWayland with GPU
+compositing, rasterization, and hardware video acceleration disabled. The
+viewer sends a heartbeat every 15 seconds. If Chromium's page renderer crashes
+or stops responding, the watchdog restarts Chromium after about 90 seconds
+without a heartbeat. This is useful on the Pi 3's memory- and
 graphics-constrained desktop and does not change the camera list or playback
 order.
 
