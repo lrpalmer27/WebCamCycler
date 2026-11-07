@@ -55,6 +55,15 @@ fi
 # retain the display session inherited from the desktop; use :0 as fallback
 export DISPLAY="${DISPLAY:-:0}"
 log "Display environment: DISPLAY=$DISPLAY, WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-not set}, XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-not set}, XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-not set}"
+LOCAL_XDOTOOL_ROOT="$HOME/.local/opt/webcamcycler-xdotool/usr"
+if [[ -x "$LOCAL_XDOTOOL_ROOT/bin/xdotool" ]]; then
+    export PATH="$LOCAL_XDOTOOL_ROOT/bin:$PATH"
+    for library_dir in "$LOCAL_XDOTOOL_ROOT"/lib/*; do
+        if [[ -d "$library_dir" ]]; then
+            export LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+        fi
+    done
+fi
 if ! command -v xdotool >/dev/null 2>&1; then
     log "WARNING: xdotool is unavailable; NTV camera activation requires 'sudo apt install xdotool'"
 fi

@@ -112,10 +112,24 @@ to activate it. This uses `xdotool` on the Pi; install the Pi-only package with:
 sudo apt install xdotool
 ```
 
-The launcher logs a warning if `xdotool` is missing. This is a Pi setup
-dependency, not an app dependency, so it is installed on the device rather than
-tracked in Git. The click is attempted once per NTV camera load to avoid
-repeatedly toggling playback.
+The deployed Pi uses the Debian `xdotool` and `libxdo3` packages extracted
+without root to `~/.local/opt/webcamcycler-xdotool`; the launcher adds their
+binary and library paths. To recreate this user-local setup instead of using
+`sudo apt install`, run:
+
+```
+mkdir -p ~/.cache/webcamcycler-xdotool ~/.local/opt/webcamcycler-xdotool
+cd ~/.cache/webcamcycler-xdotool
+apt download xdotool libxdo3
+for package in ./*.deb; do
+    dpkg-deb -x "$package" ~/.local/opt/webcamcycler-xdotool
+done
+```
+
+This is Pi setup, not an app dependency, so the packages stay on the device
+rather than in Git. The launcher logs a warning if `xdotool` is missing. The
+click is attempted once per NTV camera load to avoid repeatedly toggling
+playback.
 
 If Chromium continues to crash, update the Pi's OS-managed browser package and
 restart the kiosk service:
