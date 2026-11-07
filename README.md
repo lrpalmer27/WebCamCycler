@@ -156,8 +156,11 @@ done
 
 The launcher passes the extracted NSS/NSPR library path only to Firefox; it
 does not affect the Python app or `xdotool`. Set up these user-local files
-before restarting `webcamcycler.service`. When updating Firefox, verify its
-required NSS version and update the extracted runtime libraries as needed.
+before restarting `webcamcycler.service`. The first Firefox launch displays its
+Terms of Use prompt; tap **Continue** on the Pi touchscreen once to clear it.
+The launcher intentionally does not accept those terms automatically. When
+updating Firefox, verify its required NSS version and update the extracted
+runtime libraries as needed.
 The app code and watchdog are tracked here and deployed from `main`.
 
 Commits pushed to the `main` branch are automatically deployed to the
