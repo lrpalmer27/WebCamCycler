@@ -91,6 +91,22 @@ async function fetchJSON(url) {
     return response.json();
 }
 
+function activateNtvCamera(slot, loadId, url) {
+    window.setTimeout(async () => {
+        if (slot.loadId !== loadId || slot.iframe.src !== url) {
+            return;
+        }
+        try {
+            const result = await fetchJSON("/NTVCAMERA/");
+            if (!result.autoclicked) {
+                console.warn("Unable to activate NTV camera:", result.reason);
+            }
+        } catch (error) {
+            console.warn("Unable to activate NTV camera:", error);
+        }
+    }, 1000);
+}
+
 async function UpdateWebcamLocalTime() {
     if (!activeCamera) {
         return;
@@ -318,7 +334,13 @@ async function prepareSlot(slot, data, waitForReady = true) {
             ? "camera 'none'; microphone 'none'; autoplay; fullscreen; encrypted-media"
             : "camera 'none'; microphone 'none'; fullscreen; encrypted-media";
         addLoadListener(slot.iframe, "load", () => {
+            if (slot.loadId !== loadId) {
+                return;
+            }
             ready();
+            if (slot === activeSlot && data.VidSource === "NTV") {
+                activateNtvCamera(slot, loadId, data.ShuffledURL);
+            }
         });
         addLoadListener(slot.iframe, "error", () => {
             if (slot.loadId !== loadId) {

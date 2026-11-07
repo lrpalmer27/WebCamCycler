@@ -104,6 +104,19 @@ without a heartbeat. This is useful on the Pi 3's memory- and
 graphics-constrained desktop and does not change the camera list or playback
 order.
 
+Some NTV camera players require a real user gesture before starting video. When
+an NTV camera page finishes loading, the viewer makes one center-screen click
+to activate it. This uses `xdotool` on the Pi; install the Pi-only package with:
+
+```
+sudo apt install xdotool
+```
+
+The launcher logs a warning if `xdotool` is missing. This is a Pi setup
+dependency, not an app dependency, so it is installed on the device rather than
+tracked in Git. The click is attempted once per NTV camera load to avoid
+repeatedly toggling playback.
+
 If Chromium continues to crash, update the Pi's OS-managed browser package and
 restart the kiosk service:
 

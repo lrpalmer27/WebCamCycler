@@ -55,6 +55,9 @@ fi
 # retain the display session inherited from the desktop; use :0 as fallback
 export DISPLAY="${DISPLAY:-:0}"
 log "Display environment: DISPLAY=$DISPLAY, WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-not set}, XDG_RUNTIME_DIR=${XDG_RUNTIME_DIR:-not set}, XDG_SESSION_TYPE=${XDG_SESSION_TYPE:-not set}"
+if ! command -v xdotool >/dev/null 2>&1; then
+    log "WARNING: xdotool is unavailable; NTV camera activation requires 'sudo apt install xdotool'"
+fi
 
 # kill browser
 log "Closing any existing Chromium process"

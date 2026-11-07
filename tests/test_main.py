@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import main
@@ -102,6 +103,32 @@ class CameraRoutesTests(unittest.TestCase):
         self.assertEqual(status.status_code, 200)
         self.assertEqual(status.json["status"], "ok")
         self.assertEqual(status.json["age_seconds"], 20)
+
+    def test_ntv_activation_clicks_the_center_of_the_display(self):
+        geometry = SimpleNamespace(stdout="800 480")
+        with (
+            patch("main.sys.platform", "linux"),
+            patch("main.subprocess.run", side_effect=[geometry, None]) as run,
+        ):
+            response = self.client.get("/NTVCAMERA/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.json["autoclicked"])
+        self.assertEqual(
+            run.call_args_list[1].args[0],
+            ["xdotool", "mousemove", "400", "240", "click", "1"],
+        )
+
+    def test_ntv_activation_reports_missing_xdotool(self):
+        with (
+            patch("main.sys.platform", "linux"),
+            patch("main.subprocess.run", side_effect=FileNotFoundError("xdotool")),
+        ):
+            response = self.client.get("/NTVCAMERA/")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertFalse(response.json["autoclicked"])
+        self.assertIn("xdotool", response.json["error"])
 
     def test_shuffle_returns_a_valid_camera_and_time(self):
         response = self.client.get("/shuffle/")
@@ -248,6 +275,7 @@ class CameraRoutesTests(unittest.TestCase):
             "`/navigate/${direction}/?index=${activeCamera.CameraIndex}`",
             script,
         )
+        self.assertIn('fetchJSON("/NTVCAMERA/")', script)
 
     def test_development_reload_is_available_only_when_enabled(self):
         self.assertEqual(self.client.get("/dev/revision/").status_code, 404)

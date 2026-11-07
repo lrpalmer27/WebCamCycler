@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import random
+import subprocess
 import sys
 import tempfile
 import threading
@@ -208,6 +209,43 @@ def browser_heartbeat():
     if age >= BROWSER_HEARTBEAT_TIMEOUT_SECONDS:
         return jsonify({"status": "stale", "age_seconds": age}), 503
     return jsonify({"status": "ok", "age_seconds": age})
+
+
+@app.route("/NTVCAMERA/")
+def click_center():
+    if sys.platform == "win32":
+        return jsonify({"autoclicked": False, "reason": "not_supported"})
+
+    try:
+        width, height = map(
+            int,
+            subprocess.run(
+                ["xdotool", "getdisplaygeometry"],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=5,
+            ).stdout.split(),
+        )
+        if width <= 0 or height <= 0:
+            raise ValueError("Invalid display dimensions")
+        subprocess.run(
+            [
+                "xdotool",
+                "mousemove",
+                str(width // 2),
+                str(height // 2),
+                "click",
+                "1",
+            ],
+            check=True,
+            timeout=5,
+        )
+    except (OSError, ValueError, subprocess.SubprocessError) as error:
+        app.logger.error("Unable to activate NTV playback: %s", error)
+        return jsonify({"autoclicked": False, "error": str(error)}), 503
+
+    return jsonify({"autoclicked": True})
 
 
 @app.route("/cameras/")
