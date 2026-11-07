@@ -57,6 +57,9 @@ viewer then advances through every camera in that order before repeating it.
 Use the left and right edge click areas (or Left/Right arrow keys) to move
 backward or forward within that same order; navigation wraps at both ends.
 Restarting the server creates a new random order.
+The selected camera position is also kept on the server as the viewer advances,
+so a Chromium restart resumes after the last selected camera instead of
+repeating the camera that caused the browser to fail.
 The order is written to a temporary JSON file (`/var/tmp` on Linux) and read
 when needed instead of being kept as a Python list. This only saves a few
 hundred bytes; moving the camera definitions to disk would not meaningfully

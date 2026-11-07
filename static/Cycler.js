@@ -145,11 +145,9 @@ async function NavigateVideo(direction) {
     clearPlaybackTimeout();
 
     try {
-        const targetIndex = direction === "next"
-            ? activeCamera.NextCameraIndex
-            : activeCamera.PreviousCameraIndex;
-
-        const data = await fetchJSON(`/camera/${targetIndex}/`);
+        const data = await fetchJSON(
+            `/navigate/${direction}/?index=${activeCamera.CameraIndex}`
+        );
         activeCamera = data;
         updateCameraLabels(data);
 
@@ -174,12 +172,12 @@ async function advanceCamera(direction) {
     clearPlaybackTimeout();
 
     try {
-        let targetIndex = direction === "previous"
-            ? activeCamera.PreviousCameraIndex
-            : activeCamera.NextCameraIndex;
+        let currentIndex = activeCamera.CameraIndex;
         const attempts = direction === "previous" ? 1 : activeCamera.CameraCount;
         for (let attempt = 0; attempt < attempts; attempt += 1) {
-            const candidate = await fetchJSON(`/camera/${targetIndex}/`);
+            const candidate = await fetchJSON(
+                `/navigate/${direction}/?index=${currentIndex}`
+            );
             activeCamera = candidate;
             updateCameraLabels(candidate);
             const ready = await prepareSlot(activeSlot, candidate);
@@ -190,7 +188,7 @@ async function advanceCamera(direction) {
                 `Camera was not ready within ${CAMERA_LOAD_TIMEOUT_MS}ms; skipping:`,
                 candidate.webcamLocationDesc
             );
-            targetIndex = candidate.NextCameraIndex;
+            currentIndex = candidate.CameraIndex;
         }
 
         showStatus("No other streams are ready; retrying shortly...");

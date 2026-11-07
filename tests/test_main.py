@@ -242,9 +242,11 @@ class CameraRoutesTests(unittest.TestCase):
         self.assertIn('id="Next_camera"', page)
         self.assertIn("hls.js@1.5.17", page)
         cycler_script = Path(main.app.root_path) / "static" / "Cycler.js"
+        script = cycler_script.read_text(encoding="utf-8")
+        self.assertIn('fetch("/browser-heartbeat/"', script)
         self.assertIn(
-            'fetch("/browser-heartbeat/"',
-            cycler_script.read_text(encoding="utf-8"),
+            "`/navigate/${direction}/?index=${activeCamera.CameraIndex}`",
+            script,
         )
 
     def test_development_reload_is_available_only_when_enabled(self):
