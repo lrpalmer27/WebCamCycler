@@ -107,6 +107,13 @@ class CameraRoutesTests(unittest.TestCase):
     def test_ntv_activation_clicks_the_center_of_the_display(self):
         geometry = SimpleNamespace(stdout="800 480")
         with (
+            patch.dict(
+                "main.os.environ",
+                {
+                    "WEBCAM_CYCLER_XDOTOOL_LIBRARY_PATH": "/xdotool/lib",
+                    "LD_LIBRARY_PATH": "",
+                },
+            ),
             patch("main.sys.platform", "linux"),
             patch("main.subprocess.run", side_effect=[geometry, None]) as run,
         ):
@@ -114,6 +121,10 @@ class CameraRoutesTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.json["autoclicked"])
+        self.assertEqual(
+            run.call_args_list[0].kwargs["env"]["LD_LIBRARY_PATH"],
+            "/xdotool/lib",
+        )
         self.assertEqual(
             run.call_args_list[1].args[0],
             ["xdotool", "mousemove", "400", "240", "click", "1"],

@@ -113,9 +113,9 @@ sudo apt install xdotool
 ```
 
 The deployed Pi uses the Debian `xdotool` and `libxdo3` packages extracted
-without root to `~/.local/opt/webcamcycler-xdotool`; the launcher adds their
-binary and library paths. To recreate this user-local setup instead of using
-`sudo apt install`, run:
+without root to `~/.local/opt/webcamcycler-xdotool`; the launcher adds the
+binary path, and the app passes the local library path only to `xdotool`. To
+recreate this user-local setup instead of using `sudo apt install`, run:
 
 ```
 mkdir -p ~/.cache/webcamcycler-xdotool ~/.local/opt/webcamcycler-xdotool

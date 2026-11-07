@@ -58,11 +58,19 @@ log "Display environment: DISPLAY=$DISPLAY, WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-n
 LOCAL_XDOTOOL_ROOT="$HOME/.local/opt/webcamcycler-xdotool/usr"
 if [[ -x "$LOCAL_XDOTOOL_ROOT/bin/xdotool" ]]; then
     export PATH="$LOCAL_XDOTOOL_ROOT/bin:$PATH"
+    LOCAL_XDOTOOL_LIBRARY_PATH=''
     for library_dir in "$LOCAL_XDOTOOL_ROOT"/lib/*; do
         if [[ -d "$library_dir" ]]; then
-            export LD_LIBRARY_PATH="$library_dir${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+            if [[ -z "$LOCAL_XDOTOOL_LIBRARY_PATH" ]]; then
+                LOCAL_XDOTOOL_LIBRARY_PATH="$library_dir"
+            else
+                LOCAL_XDOTOOL_LIBRARY_PATH="$LOCAL_XDOTOOL_LIBRARY_PATH:$library_dir"
+            fi
         fi
     done
+    if [[ -n "$LOCAL_XDOTOOL_LIBRARY_PATH" ]]; then
+        export WEBCAM_CYCLER_XDOTOOL_LIBRARY_PATH="$LOCAL_XDOTOOL_LIBRARY_PATH"
+    fi
 fi
 if ! command -v xdotool >/dev/null 2>&1; then
     log "WARNING: xdotool is unavailable; NTV camera activation requires 'sudo apt install xdotool'"

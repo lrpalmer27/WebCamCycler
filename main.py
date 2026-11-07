@@ -216,6 +216,21 @@ def click_center():
     if sys.platform == "win32":
         return jsonify({"autoclicked": False, "reason": "not_supported"})
 
+    xdotool_environment = os.environ.copy()
+    local_library_path = xdotool_environment.get(
+        "WEBCAM_CYCLER_XDOTOOL_LIBRARY_PATH"
+    )
+    if local_library_path:
+        xdotool_environment["LD_LIBRARY_PATH"] = os.pathsep.join(
+            filter(
+                None,
+                (
+                    local_library_path,
+                    xdotool_environment.get("LD_LIBRARY_PATH"),
+                ),
+            )
+        )
+
     try:
         width, height = map(
             int,
@@ -225,6 +240,7 @@ def click_center():
                 capture_output=True,
                 text=True,
                 timeout=5,
+                env=xdotool_environment,
             ).stdout.split(),
         )
         if width <= 0 or height <= 0:
@@ -240,6 +256,7 @@ def click_center():
             ],
             check=True,
             timeout=5,
+            env=xdotool_environment,
         )
     except (OSError, ValueError, subprocess.SubprocessError) as error:
         app.logger.error("Unable to activate NTV playback: %s", error)
