@@ -196,7 +196,7 @@ log "Recording Chromium diagnostics in $CHROMIUM_LOGFILE"
 log "Starting Chromium watchdog with X11 and software rendering"
 nohup bash "$APP_DIR/rpiWatchdog.sh" \
     "$CHROMIUM_BIN" "$LOGFILE" "$CHROMIUM_LOGFILE" "$WATCHDOG_PIDFILE" \
-    --ozone-platform=x11 --disable-gpu --disable-gpu-compositing \
+    --no-gl-override --ozone-platform=x11 --disable-gpu --disable-gpu-compositing \
     --disable-gpu-rasterization --disable-accelerated-video-decode \
     --disable-accelerated-video-encode --kiosk --incognito --no-first-run \
     --disable-infobars --password-store="basic" \
